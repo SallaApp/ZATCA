@@ -8,7 +8,7 @@
         "salla",
         "qr-code"
     ],
-    "homepage": "https://github.com/salla/php-zatca",
+    "homepage": "https://github.com/salla/zatca",
     "license": "MIT",
     "authors": [
         {
@@ -18,8 +18,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/salla/php-zatca/issues",
-        "source": "https://github.com/salla/php-zatca"
+        "issues": "https://github.com/salla/zatca/issues",
+        "source": "https://github.com/salla/zatca"
     },
     "minimum-stability": "stable",
     "require": {
