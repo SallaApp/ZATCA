@@ -31,11 +31,13 @@ class Tag
     }
 
     /**
+     * its important to get the number of bytes of a string instated of number of characters
+     *
      * @return false|int
      */
     public function getLength()
     {
-        return mb_strlen($this->value);
+        return strlen($this->value);
     }
 
     /**

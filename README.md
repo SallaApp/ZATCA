@@ -60,7 +60,7 @@ $generatedString = GenerateQrCode::fromArray([
 ])->toTLV();
 ```
 
-## Render A QR Code Image
+### Render A QR Code Image
 
 You can render the tags as QR code image easily
 

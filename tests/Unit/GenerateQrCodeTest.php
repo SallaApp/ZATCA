@@ -30,6 +30,21 @@ class GenerateQrCodeTest extends TestCase
     }
 
     /** @test */
+    public function shouldGenerateAQrCodeAsArabic()
+    {
+        $generatedString = GenerateQrCode::fromArray([
+            new Tag(1, 'سلة'),
+            new Tag(2, '1234567891'),
+            new Tag(3, '2021-07-12T14:25:09Z'),
+            new Tag(4, '100.00'),
+            new Tag(5, '15.00')
+        ])->toBase64();
+
+        $this->assertEquals(
+            'AQbYs9mE2KkCCjEyMzQ1Njc4OTEDFDIwMjEtMDctMTJUMTQ6MjU6MDlaBAYxMDAuMDAFBTE1LjAw', $generatedString);
+    }
+
+    /** @test */
     public function shouldGenerateAQrCodeFromTagsClasses()
     {
         $generatedString = GenerateQrCode::fromArray([
