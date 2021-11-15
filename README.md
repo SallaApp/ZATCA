@@ -1,6 +1,19 @@
-# ZATCA (Fatoora) QR-Code Implementation
-
-An unofficial package maintained by [Salla](https://salla.dev) to help developers to implement ZATCA (Fatoora) QR code easily which required for e-invoicing
+<div id="top"></div>
+<div align="center"> 
+  <a href="https://salla.dev"> 
+    <img src="https://salla.dev/wp-content/themes/salla-portal/dist/img/salla-logo.svg" alt="Logo" width="80" height="80"> 
+  </a>
+  <h1 align="center">ZATCA (Fatoora) QR-Code Implementation</h1>
+  <p align="center">
+    An unofficial package maintained by <a href="https://salla.dev">Salla</a> to help developers to implement ZATCA (Fatoora) QR code easily which required for e-invoicing
+    <br />
+    <a href="https://salla.dev/"><strong>Explore our blogs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/SallaApp/ZATCA/issues/new">Report Bug</a> · 
+    <a href="https://github.com/SallaApp/ZATCA/discussions/new">Request Feature</a>
+  </p>
+</div>
 
 ## Requirements
 
@@ -14,6 +27,7 @@ You can install the package via composer:
 ```bash
 $ composer require salla/zatca
 ```
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Usage
 
@@ -59,6 +73,7 @@ $generatedString = GenerateQrCode::fromArray([
     // TODO :: Support others tags
 ])->toTLV();
 ```
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ### Render A QR Code Image
 
@@ -86,6 +101,7 @@ $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
 // now you can inject the output to src of html img tag :)
 // <img src="$displayQRCodeAsBase64" alt="QR Code" />
 ```
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## TODO
 
@@ -98,6 +114,7 @@ We'll continue work on this package until support the whole cycle of QR code imp
 ```bash
 composer test
 ```
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Support
 
@@ -105,19 +122,37 @@ Please don't hesitate to contact us using the [</Salla Developers>](https://t.me
 
 - https://t.me/salladev
 
+
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+Contributions are what makes the open-source community such an amazing place to learn, inspire, and create. 
+Any contributions you make are **greatly appreciated**.
+
+If you have a suggestion that would make this better, please fork the repo and create a pull request. 
+You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
 
 ## Security
 
-If you discover any security related issues, please email security@salla.sa instead of using the issue tracker.
+If you discover any securitysrelated issues, please email security@salla.sa instead of using the issue tracker.
+
 
 ## Credits
 
 - [Salla](https://github.com/sallaApp)
 - [All Contributors](../../contributors)
 
+
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+
+<p align="right">(<a href="#top">back to top</a>)</p>
