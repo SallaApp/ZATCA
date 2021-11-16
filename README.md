@@ -125,7 +125,7 @@ Please don't hesitate to contact us using the [</Salla Developers>](https://t.me
 
 ## Contributing
 
-Contributions are what makes the open-source community such an amazing place to learn, inspire, and create. 
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. 
 Any contributions you make are **greatly appreciated**.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. 
@@ -142,7 +142,7 @@ You can also simply open an issue with the tag "enhancement". Don't forget to gi
 
 ## Security
 
-If you discover any securitysrelated issues, please email security@salla.sa instead of using the issue tracker.
+If you discover any securitys-related issues, please email security@salla.sa instead of using the issue tracker.
 
 
 ## Credits
