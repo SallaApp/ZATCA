@@ -103,6 +103,17 @@ $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
 ```
 <p align="right">(<a href="#top">back to top</a>)</p>
 
+
+## Read The QR-Code
+
+The output of QR-Code is not readable for the human 👀, and some of QR-Code readers maybe show a invalid output because this QR-Code will be scan by the ZATCA apps later after the all steps of integration compete.
+If you interested to see the output of your final QR-Code Image you can use the following website
+
+https://www.onlinebarcodereader.com/
+
+![image](https://user-images.githubusercontent.com/10876587/142364186-f7d5b523-07fc-4776-8b96-9a75f4a455d1.png)
+
+
 ## TODO
 
 We'll continue work on this package until support the whole cycle of QR code implementation.
