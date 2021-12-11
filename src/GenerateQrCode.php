@@ -4,6 +4,7 @@ namespace Salla\ZATCA;
 
 use chillerlan\QRCode\QRCode;
 use InvalidArgumentException;
+use chillerlan\QRCode\QROptions;
 
 class GenerateQrCode
 {
@@ -68,8 +69,13 @@ class GenerateQrCode
      *
      * @return string
      */
-    public function render(): string
+    public function render($scale = 5): string
     {
-        return (new QRCode)->render($this->toBase64());
+        $options = new QROptions(
+            [
+              'scale' => $scale,
+            ]
+          );
+        return (new QRCode($options))->render($this->toBase64());
     }
 }
