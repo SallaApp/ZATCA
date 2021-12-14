@@ -4,7 +4,7 @@ All notable changes to `salla/zatca` will be documented in this file
 
 ## 2.0.0 - 2021-12-14
 
-- Allow passing mutliple QROptions #10 by @ali-alharthi 
+- Allow passing mutliple QROptions #10 by @ali-alharthi
 
 
 ### 🚨  Brack Change 
