@@ -67,15 +67,13 @@ class GenerateQrCode
     /**
      * Render the QR code as base64 data image.
      *
+     * @param  array  $options  The list of options for QROption (https://github.com/chillerlan/php-qrcode)
+     *
      * @return string
      */
-    public function render($scale = 5): string
+    public function render(array $options = []): string
     {
-        $options = new QROptions(
-            [
-              'scale' => $scale,
-            ]
-          );
+        $options = new QROptions($options);
         return (new QRCode($options))->render($this->toBase64());
     }
 }
