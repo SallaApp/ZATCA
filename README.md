@@ -12,6 +12,7 @@
     <br />
     <a href="https://github.com/SallaApp/ZATCA/issues/new">Report Bug</a> · 
     <a href="https://github.com/SallaApp/ZATCA/discussions/new">Request Feature</a>
+       · <a href="https://t.me/salladev">&lt;/Salla Developers&gt;</a>
   </p>
 </div>
 
