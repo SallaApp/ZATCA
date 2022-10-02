@@ -1,0 +1,90 @@
+name: Rector
+on:
+  push:
+    branches:
+      - master 
+  workflow_dispatch:
+jobs: 
+  build:
+    if: "!contains(github.event.head_commit.message, 'rector enhance')"
+    runs-on: ubuntu-latest
+    container: 
+      image: sallasa/rector:0.6
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASS }}
+    steps:
+     - name: CHECKOUT
+       uses: actions/checkout@v2
+       with:
+         token: ${{ secrets.PROTECTED_BRANCH_TOKEN }}
+
+     - name: GET rector.php 
+       run: curl https://salla-dev.oss-eu-central-1.aliyuncs.com/devops/rector.php --output rector.php
+
+     - name: RUN RECTOR  
+       run: /app/vendor/bin/rector process
+
+     - name: FIX GIT PERMISSION 
+       run: |
+        git config --global --add safe.directory /github/workspace
+
+     - name: REMOVE RECTOR FILE 
+       continue-on-error: true
+       run: |
+        rm rector.php 
+        
+     - name: CHEECK RECTOR CHANGE
+       id: changes
+       uses: UnicornGlobal/has-changes-action@v1.0.11
+       
+
+     - name: CLOSE PULL REQUEST 
+       if: steps.changes.outputs.changed == 1
+       uses: kyslik/close-pull-requests-based-on-label@v1.0.0
+       env:
+          LABEL: rector-enhance
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+     - name: DELETE RECTOR OLD BRANCH
+       continue-on-error: true
+       if: steps.changes.outputs.changed == 1
+       uses: dawidd6/action-delete-branch@v3
+       with:
+          github_token: ${{github.token}}
+          branches: rector-enhancement
+         
+     - name: COMMIT CHANGES
+       if: steps.changes.outputs.changed == 1
+       run: |
+        git config --global --add safe.directory /__w/${{ github.event.repository.name }}/${{ github.event.repository.name }}
+        BRANCH_NAME="rector-enhancement"
+        echo "BRANCH_NAME=$(echo $BRANCH_NAME)" >> $GITHUB_ENV
+        
+        echo $BRANCH_NAME
+        git config --global user.name ${{secrets.GIT_DEVOPS_USERNAME}}
+        git config --global user.email "${{secrets.GIT_DEVOPS_EMAIL}}@users.noreply.github.com"
+        git checkout -b $BRANCH_NAME
+        git add . 
+        git commit -m "rector enhance ⚙️"
+        git push --set-upstream origin $BRANCH_NAME
+
+   
+     - name: create pull-request
+       uses: repo-sync/pull-request@v2
+       with:
+        source_branch: ${{ env.BRANCH_NAME }}              
+        destination_branch: "master"                      
+        pr_title: "🚧 [Rector Enhancement]🚧" 
+        pr_body: |
+          ## Rector upgrading to PHP 7.4 ⬆️
+          This pr is auto generated with every push to master 
+        # pr_template: ".github/PULL_REQUEST_TEMPLATE.md"  
+        # pr_reviewer: "wei,worker"                           
+        pr_assignee: "salkhwlani,${{ github.event.commits[0].committer.name }}"                        
+        pr_label: "rector-enhance"                   
+        # pr_milestone: "Milestone 1"                      
+        pr_draft: false                                   
+        pr_allow_empty: true                              
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+ 

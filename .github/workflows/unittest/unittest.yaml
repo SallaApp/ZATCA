@@ -1,0 +1,13 @@
+name: Unit Tests
+on:
+  push:
+    branches:
+      - master
+jobs:
+  phpunit:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run unit test 
+      uses: nathanheffley/laravel-phpunit-action@master
