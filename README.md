@@ -12,6 +12,7 @@
     <br />
     <a href="https://github.com/SallaApp/ZATCA/issues/new">Report Bug</a> · 
     <a href="https://github.com/SallaApp/ZATCA/discussions/new">Request Feature</a>
+       · <a href="https://t.me/salladev">&lt;/Salla Developers&gt;</a>
   </p>
 </div>
 
@@ -129,9 +130,7 @@ composer test
 
 ## Support
 
-Please don't hesitate to contact us using the [</Salla Developers>](https://t.me/salladev) at telegram
-
-- https://t.me/salladev
+The team is always here to help you. Happen to face an issue? Want to report a bug? You can submit one here on Github using the [Issue Tracker](https://github.com/SallaApp/Salla-CLI/issues/new). If you still have any questions, please contact us via the [Telegram Bot](https://t.me/SallaSupportBot) or join in the Global Developer Community on [Telegram](https://t.me/salladev).
 
 
 ## Contributing
