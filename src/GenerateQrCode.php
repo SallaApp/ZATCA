@@ -65,15 +65,28 @@ class GenerateQrCode
     }
 
     /**
-     * Render the QR code as base64 data image.
+     * Render the QR code as base64 encoded image string or/and save file.
      *
-     * @param  array  $options  The list of options for QROption (https://github.com/chillerlan/php-qrcode)
+     * @param  mixed  $args  Mixed of first two arguments: QROption settings list [optional] or/and file to be saved [optional] (https://github.com/chillerlan/php-qrcode)
      *
      * @return string
      */
-    public function render(array $options = []): string
+    public function render(...$args): string
     {
-        $options = new QROptions($options);
-        return (new QRCode($options))->render($this->toBase64());
+        foreach ($args as $key => $arg) {
+            if ($key > 1) {
+                break;
+            }
+
+            if (is_array($arg)) {
+                $options = $arg;
+            }
+
+            if (is_string($arg)) {
+                $file = $arg;
+            };
+        }
+        $options = new QROptions($options ?? []);
+        return (new QRCode($options))->render($this->toBase64(), $file ?? null);
     }
 }
