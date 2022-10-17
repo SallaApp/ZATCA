@@ -84,7 +84,7 @@ class GenerateQrCode
 
             if (is_string($arg)) {
                 $file = $arg;
-            };
+            }
         }
         $options = new QROptions($options ?? []);
         return (new QRCode($options))->render($this->toBase64(), $file ?? null);
