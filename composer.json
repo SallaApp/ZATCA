@@ -25,7 +25,9 @@
     "require": {
         "php": ">=7.2",
         "ext-mbstring": "*",
-        "chillerlan/php-qrcode": "^4.3 || ^3.4"
+        "chillerlan/php-qrcode": "^4.3 || ^3.4",
+        "symfony/http-foundation": "^5.4",
+        "ext-openssl": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "~8.0"
