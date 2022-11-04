@@ -2,8 +2,6 @@
 
 namespace Salla\ZATCA;
 
-use App\Traits\HasParameters;
-use OpenSSLAsymmetricKey;
 use Symfony\Component\HttpFoundation\ParameterBag;
 
 class CSR
@@ -26,7 +24,7 @@ class CSR
 
     protected $tempConf = <<<EOL
 # ------------------------------------------------------------------
-# Default section for "req" command options
+# Default section for "req" command options - ZAY
 # ------------------------------------------------------------------
 [req]
 # Password for reading in existing private key file
@@ -56,13 +54,13 @@ EOL;
     final public function __construct(array $parameters = [])
     {
         $this->initialize($parameters);
-        $this->initCsrGeneration();
-
     }
 
     public function initialize(array $parameters = null): self
     {
         $this->parameters = new ParameterBag($parameters);
+
+        $this->initCsrGeneration();
 
         return $this;
     }
@@ -85,7 +83,7 @@ EOL;
     }
 
 
-    public function initSubject()
+    public function initSubject(): void
     {
         $this->subject = [
             # EGS Serial number (1-SolutionName|2-ModelOrVersion|3-serialNumber)
@@ -93,31 +91,30 @@ EOL;
             # VAT Registration number of TaxPayer (Organization identifier [15 digits begins with 3 and ends with 3])
             "UID"               => $this->getParameter('UID'),
             # Invoice type (TSCZ)(1 = supported, 0 not supported) (Tax, Simplified, future use, future use)
-            "title"             => 1100,
+            "title"             => $this->getParameter('invoiceType'),
             # Location (branch address or website)
             "registeredAddress" => $this->getParameter('registeredAddress'),
             # Industry (industry sector name)
-            "businessCategory"  => "company",
+            "businessCategory"  => "company", //$this->getParameter('businessCategory'), //todo make it
         ];
 
         $this->subject = implode("\n", array_map(function ($name, $value) {
             return "{$name} = {$value}";
         }, array_keys($this->subject), $this->subject));
 
-        return file_put_contents($this->tempFile, $this->tempConf . "\n" . $this->subject . "\n");
+        file_put_contents($this->tempFile, $this->tempConf . "\n" . $this->subject . "\n");
     }
 
 
-    public function generateCsr():string
+    public function generateCsr(): string
     {
-        /**@var OpenSSLAsymmetricKey $privateKey */
         $privateKey = openssl_pkey_new($this->opensslConfig);
 
         $csr = openssl_csr_new($this->getBaseCsrInfo(), $privateKey, $this->opensslConfig);
 
         openssl_csr_export($csr, $csrAsString);
-
-        unlink($this->tempFile);
+        dd($this->tempFile, $csrAsString);
+        // unlink($this->tempFile);
 
         return $csrAsString;
     }
@@ -125,9 +122,9 @@ EOL;
     private function getBaseCsrInfo(): array
     {
         return [
-            "commonName"             =>  $this->getParameter('commonName'),// Common name (EGS TaxPayer PROVIDED ID [FREE TEXT])
-            "organizationName"       =>  $this->getParameter('organizationName'),// Organization name (Tax payer name)
-            "organizationalUnitName" =>  $this->getParameter('organizationalUnitName'), // Organization Unit (Branch name)
+            "commonName"             => $this->getParameter('commonName'),// Common name (EGS TaxPayer PROVIDED ID [FREE TEXT])
+            "organizationName"       => $this->getParameter('organizationName'),// Organization name (Tax payer name)
+            "organizationalUnitName" => $this->getParameter('organizationalUnitName'), // Organization Unit (Branch name)
             "countryName"            => $this->getParameter('countryName'),//ISO2 country code is required with US as default
         ];
     }
