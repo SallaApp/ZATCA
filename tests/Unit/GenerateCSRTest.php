@@ -24,7 +24,7 @@ class GenerateCSRTest extends TestCase
                 ->setSerialNumber()
                 ->setVatRegistrationNumber();
 
-            GenerateQrCode::fromRequest($csr_request);
+           $arrayRequest =  GenerateQrCode::fromRequest($csr_request);
         } catch (\Exception $exception) {
             // ......
         }
