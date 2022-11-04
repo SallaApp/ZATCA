@@ -113,8 +113,8 @@ EOL;
         $csr = openssl_csr_new($this->getBaseCsrInfo(), $privateKey, $this->opensslConfig);
 
         openssl_csr_export($csr, $csrAsString);
-        dd($this->tempFile, $csrAsString);
-        // unlink($this->tempFile);
+
+        unlink($this->tempFile);
 
         return $csrAsString;
     }
