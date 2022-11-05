@@ -131,7 +131,6 @@ class CSRRequest
     public function setSerialNumber(string $solutionName, string $version, string $serialNumber): CSRRequest
     {
         $this->serial_number = sprintf('1-%s|2-%s|3-%s', $solutionName, $version, $serialNumber);
-
         return $this;
     }
 
@@ -139,7 +138,6 @@ class CSRRequest
     public function setInvoiceType(bool $taxInvoice, bool $simplified): CSRRequest
     {
         $this->invoiceType = sprintf('%s%s00', (int)$taxInvoice, (int)$simplified);
-
         return $this;
     }
 
@@ -148,10 +146,10 @@ class CSRRequest
     {
         return [
             'dn'      => [
-                "commonName"             => $this->getCommonName(),
+                "CN"             => $this->getCommonName(),
                 "organizationName"       => $this->getOrganizationName(),
                 "organizationalUnitName" => $this->getOrganizationalUnitName(),
-                "countryName"            => $this->getCommonName()
+                "C"            => $this->getCountry()
             ],
             'subject' => [
                 "SN"                => $this->getSerialNumber(),
@@ -202,5 +200,10 @@ class CSRRequest
     private function getBusinessCategory(): string
     {
         return $this->businessCategory;
+    }
+
+    private function getCountry():string
+    {
+        return $this->countryName;
     }
 }

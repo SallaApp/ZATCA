@@ -59,7 +59,7 @@ EOL;
             return "{$name} = {$value}";
         }, array_keys($this->data['subject']), $this->data['subject']));
 
-        // todo :: throw expetions if is failed
+        //todo :: throw exceptions if is failed
         file_put_contents($this->opensslConfig['config'], $this->tempConf . "\n" . $subject . "\n");
 
         return $this;
@@ -79,5 +79,10 @@ EOL;
         unlink($this->opensslConfig['config']);
 
         return new CSR($csrAsString, $privateKey);
+    }
+
+    public static function fromRequest(CSRRequest $CSRRequest): GenerateCSR
+    {
+        return new static($CSRRequest);
     }
 }
