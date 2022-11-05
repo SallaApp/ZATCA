@@ -68,11 +68,25 @@ EOL;
 
     public function generate(): CSR
     {
-        // todo :: handling throw expetions
-        $privateKey = openssl_pkey_new($this->opensslConfig);
+        if (! ($privateKey = openssl_pkey_new($this->opensslConfig))) {
+            while (($e = openssl_error_string()) !== false) {
+                $this->logErrors(function () use ($e) {
+                    return $e . "\n";  //todo implement logging functionality
+                });
+            }
+            throw new \RuntimeException('Error Generating New Private Key');
+        }
 
-        // todo :: handling
         $csr = openssl_csr_new($this->data['dn'], $privateKey, $this->opensslConfig);
+
+        if (! ($csr)) {
+            while (($e = openssl_error_string()) !== false) {
+                $this->logErrors(function () use ($e) {
+                    return $e . "\n";
+                });
+            }
+            throw new \Exception('Error Generating New Certificate Signing Request');
+        }
 
         openssl_csr_export($csr, $csrAsString);
 
@@ -84,5 +98,12 @@ EOL;
     public static function fromRequest(CSRRequest $CSRRequest): GenerateCSR
     {
         return new static($CSRRequest);
+    }
+
+    private function logErrors($msg): void
+    {
+        openlog('CSRErrLog', LOG_CONS | LOG_PID | LOG_PERROR, LOG_USER);
+        syslog(LOG_ERR, $msg);
+        closelog();
     }
 }
