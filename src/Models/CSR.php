@@ -4,20 +4,20 @@ namespace Salla\ZATCA\Models;
 
 class CSR
 {
-    private $scrContent;
+    private $csrContent;
 
     private $privateKey;
 
-    public  function __construct($scrContent, $privateKey)
+    public function __construct(string $csrContent, $privateKey)
     {
-        $this->scrContent = $scrContent;
+        $this->csrContent = $csrContent;
         $this->privateKey = $privateKey;
     }
 
 
-    public function getScrContent()
+    public function getCsrContent(): string
     {
-        return $this->scrContent;
+        return $this->csrContent;
     }
 
     public function getPrivateKey()
