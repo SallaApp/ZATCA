@@ -38,8 +38,7 @@ distinguished_name = dn
 #basicConstraints=CA:FALSE
 #keyUsage = digitalSignature, keyEncipherment
 # Production or Testing Template (TSTZATCA-Code-Signing - ZATCA-Code-Signing)
-# it managed Now by subject array
-#1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing
+1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing
 subjectAltName=dirName:subject
 
 [ subject ]
@@ -59,6 +58,12 @@ EOL;
         $subject = implode("\n", array_map(function ($name, $value) {
             return "{$name} = {$value}";
         }, array_keys($this->data['subject']), $this->data['subject']));
+
+
+        //todo replace the "1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing" if it is production
+        if(! $CSRRequest->getIsSandboxEnv()){
+            str_replace('ZATCA-Code-Signing', 'TSTZATCA-Code-Signing', $this->tempConf);
+        }
 
         //todo :: throw exceptions if is failed
         file_put_contents($this->opensslConfig['config'], $this->tempConf . "\n" . $subject . "\n");

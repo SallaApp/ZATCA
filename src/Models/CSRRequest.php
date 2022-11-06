@@ -162,17 +162,13 @@ class CSRRequest
                 "title"                => $this->getInvoiceType(),
                 "registeredAddress"    => $this->getRegisteredAddress(),
                 "businessCategory"     => $this->getBusinessCategory(),
-                "1.3.6.1.4.1.311.20.2" => $this->getCodeSigningFromConfig()
             ]
         ];
     }
 
-    private function getCodeSigningFromConfig(): string
+    public function getIsSandboxEnv(): bool
     {
-        if ($this->is_sandbox_env) {
-            return "ASN1:UTF8String:ZATCA-Code-Signing";
-        }
-        return "ASN1:UTF8String:TSTZATCA-Code-Signing";
+        return$this->is_sandbox_env;
     }
 
     public function getSerialNumber(): string
@@ -180,27 +176,27 @@ class CSRRequest
         return $this->serial_number;
     }
 
-    private function getCommonName(): string
+    public function getCommonName(): string
     {
         return $this->commonName;
     }
 
-    private function getOrganizationName(): string
+    public function getOrganizationName(): string
     {
         return $this->organizationName;
     }
 
-    private function getOrganizationalUnitName(): string
+    public function getOrganizationalUnitName(): string
     {
         return $this->organizationalUnitName;
     }
 
-    private function getUID(): string
+    public function getUID(): string
     {
         return $this->UID;
     }
 
-    private function getInvoiceType(): string
+    public function getInvoiceType(): string
     {
         return $this->invoiceType;
     }
@@ -210,12 +206,12 @@ class CSRRequest
         return $this->registeredAddress;
     }
 
-    private function getBusinessCategory(): string
+    public function getBusinessCategory(): string
     {
         return $this->businessCategory;
     }
 
-    private function getCountry(): string
+    public function getCountry(): string
     {
         return $this->countryName;
     }
