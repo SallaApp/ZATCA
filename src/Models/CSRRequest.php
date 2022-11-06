@@ -12,7 +12,7 @@ class CSRRequest
     protected $serial_number;
 
 
-    protected $is_sandbox_env = false;
+    protected $is_sandbox_env = true;
 
 
     /**
@@ -141,26 +141,39 @@ class CSRRequest
         return $this;
     }
 
+    public function setIsSandBoxEnv(bool $value = true): self
+    {
+        $this->is_sandbox_env = $value;
+        return $this;
+    }
 
     public function toArray(): array
     {
         return [
             'dn'      => [
-                "CN"             => $this->getCommonName(),
+                "CN"                     => $this->getCommonName(),
                 "organizationName"       => $this->getOrganizationName(),
                 "organizationalUnitName" => $this->getOrganizationalUnitName(),
-                "C"            => $this->getCountry()
+                "C"                      => $this->getCountry()
             ],
             'subject' => [
-                "SN"                => $this->getSerialNumber(),
-                "UID"               => $this->getUID(),
-                "title"             => $this->getInvoiceType(),
-                "registeredAddress" => $this->getRegisteredAddress(),
-                "businessCategory"  => $this->getBusinessCategory(),
+                "SN"                   => $this->getSerialNumber(),
+                "UID"                  => $this->getUID(),
+                "title"                => $this->getInvoiceType(),
+                "registeredAddress"    => $this->getRegisteredAddress(),
+                "businessCategory"     => $this->getBusinessCategory(),
+                "1.3.6.1.4.1.311.20.2" => $this->getCodeSigningFromConfig()
             ]
         ];
     }
 
+    private function getCodeSigningFromConfig(): string
+    {
+        if ($this->is_sandbox_env) {
+            return "ASN1:UTF8String:ZATCA-Code-Signing";
+        }
+        return "ASN1:UTF8String:TSTZATCA-Code-Signing";
+    }
 
     public function getSerialNumber(): string
     {
@@ -202,7 +215,7 @@ class CSRRequest
         return $this->businessCategory;
     }
 
-    private function getCountry():string
+    private function getCountry(): string
     {
         return $this->countryName;
     }

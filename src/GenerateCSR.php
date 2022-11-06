@@ -17,7 +17,7 @@ class GenerateCSR
 
     protected $tempConf = <<<EOL
 # ------------------------------------------------------------------
-# Default section for "req" command options - ZAY
+# Default section for "req" command options -
 # ------------------------------------------------------------------
 [req]
 # Password for reading in existing private key file
@@ -38,7 +38,8 @@ distinguished_name = dn
 #basicConstraints=CA:FALSE
 #keyUsage = digitalSignature, keyEncipherment
 # Production or Testing Template (TSTZATCA-Code-Signing - ZATCA-Code-Signing)
-1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing
+# it managed Now by subject array
+#1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing
 subjectAltName=dirName:subject
 
 [ subject ]
