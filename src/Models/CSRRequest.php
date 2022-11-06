@@ -2,6 +2,9 @@
 
 namespace Salla\ZATCA\Models;
 
+use Illuminate\Support\Str;
+use Salla\ZATCA\Exception\CSRValidationException;
+
 class CSRRequest
 {
     /**
@@ -90,12 +93,23 @@ class CSRRequest
 
     public function setOrganizationalUnitName(string $organizationalUnitName): self
     {
+        if (strpos($this->getUID(), '1', 10) == 1  &&  strlen($organizationalUnitName) != 10) {
+            throw new CSRValidationException('The Organization Unit Name Must Match this (If 11th digit of Organization Identifier(UID) = 1 then needs to be 10 digit number)',422);
+        }
+
         $this->organizationalUnitName = $organizationalUnitName;
         return $this;
     }
 
+    /**
+     * @throws \Salla\ZATCA\Exception\CSRValidationException
+     */
     public function setCountryName(string $countryName): self
     {
+        if(strlen($countryName) !== 2){
+            throw new CSRValidationException('The Country name must be Two chars only',422);
+        }
+
         $this->countryName = $countryName;
         return $this;
     }
@@ -103,6 +117,10 @@ class CSRRequest
 
     public function setUID(string $UID): self
     {
+        if( strlen($UID) !== 15 || ! Str::startsWith($UID, '3') || ! Str::endsWith($UID, '3')){
+            throw new CSRValidationException('The Organization Identifier must be 15 digits, starting andending with 3 ',422);
+        }
+
         $this->UID = $UID;
         return $this;
     }
@@ -166,7 +184,7 @@ class CSRRequest
         ];
     }
 
-    public function getIsSandboxEnv(): bool
+    public function isSandboxEnv(): bool
     {
         return$this->is_sandbox_env;
     }
