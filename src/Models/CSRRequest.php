@@ -161,7 +161,7 @@ class CSRRequest
                 "UID"                  => $this->getUID(),
                 "title"                => $this->getInvoiceType(),
                 "registeredAddress"    => $this->getRegisteredAddress(),
-                "businessCategory"     => $this->getBusinessCategory(),
+                "businessCategory"     => $this->getBusinessCategory()
             ]
         ];
     }
