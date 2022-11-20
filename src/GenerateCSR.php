@@ -56,7 +56,8 @@ EOL;
     public function initialize(): self
     {
         $this->opensslConfig['config'] = tempnam(sys_get_temp_dir(), "zakact_openssl_config_");
-        // prepare openssl config file
+       
+        // prepare openssl config file.
         $subject = implode("\n", array_map(function ($name, $value) {
             return "{$name} = {$value}";
         }, array_keys($this->data['subject']), $this->data['subject']));

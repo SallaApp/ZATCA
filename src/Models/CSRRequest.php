@@ -101,9 +101,7 @@ class CSRRequest
         return $this;
     }
 
-    /**
-     * @throws \Salla\ZATCA\Exception\CSRValidationException
-     */
+
     public function setCountryName(string $countryName): self
     {
         if(strlen($countryName) !== 2){
