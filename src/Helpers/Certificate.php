@@ -6,17 +6,36 @@ use phpseclib3\Crypt\Common\PrivateKey;
 use phpseclib3\Crypt\EC;
 use phpseclib3\File\X509;
 
+/**
+ * Class Certificate
+ * @package Salla\ZATCA\Helpers
+ */
 class Certificate
 {
+    /**
+     * @var string
+     */
     protected string $plain_certificate;
+
+    /**
+     * @var \phpseclib3\File\X509
+     */
     protected X509 $certificate;
+
+    /**
+     * @var \phpseclib3\Crypt\Common\PrivateKey
+     */
     protected PrivateKey $privateKey;
+
+    /**
+     * @var string|null
+     */
     protected ?string $secret_key;
 
     public function __construct(string $certificate, string $privateKey)
     {
         $this->plain_certificate = $certificate;
-        $this->certificate = (new X509());
+        $this->certificate       = (new X509());
         $this->certificate->loadX509($certificate);
         $this->privateKey = EC::loadPrivateKey($privateKey);
     }
