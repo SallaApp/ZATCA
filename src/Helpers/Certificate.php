@@ -6,9 +6,6 @@ use phpseclib3\Crypt\Common\PrivateKey;
 use phpseclib3\Crypt\EC;
 use phpseclib3\File\X509;
 
-/**
- * @mixin X509
- */
 class Certificate
 {
     protected string $plain_certificate;
@@ -45,7 +42,7 @@ class Certificate
     {
         return $this->plain_certificate;
     }
-    
+
     public function getCertificate(): X509
     {
         return $this->certificate;
