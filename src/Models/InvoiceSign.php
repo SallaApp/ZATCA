@@ -29,6 +29,12 @@ class InvoiceSign
 
     public function sign()
     {
+        $this->xmlDom = UXML::fromString($this->xmlInvoice);
+
+        // remove unwanted tags
+        $extNode = $this->xmlDom->get('ext:UBLExtensions');
+        $signNode = $this->xmlDom->get('cac:Signature');
+        $qrNode = $this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
         if ($extNode) {
             $extNode->remove();
