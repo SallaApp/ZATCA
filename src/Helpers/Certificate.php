@@ -7,8 +7,8 @@ use phpseclib3\Crypt\EC;
 use phpseclib3\File\X509;
 
 /**
- * Class Certificate
  * @package Salla\ZATCA\Helpers
+ * @mixin X509
  */
 class Certificate
 {

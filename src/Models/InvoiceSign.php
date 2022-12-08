@@ -32,10 +32,21 @@ class InvoiceSign
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
         // remove unwanted tags
-        optional($this->xmlDom->get('ext:UBLExtensions'))->remove();
-        optional($this->xmlDom->get('cac:Signature'))->remove();
-        optional($this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]'))->parent()->remove();
+        $extNode = $this->xmlDom->get('ext:UBLExtensions');
+        $signNode = $this->xmlDom->get('cac:Signature');
+        $qrNode = $this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
+        if($extNode){
+            $extNode->remove();
+        }
+
+        if($signNode){
+            $signNode->remove();
+        }
+
+        if($qrNode){
+            $qrNode->parent()->remove();
+        }
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @see page 52
@@ -73,9 +84,8 @@ class InvoiceSign
             $this->xmlInvoice);
 
         return [
-            'signedInvoice' => $this->xmlInvoice,
             'invoiceHash'   => $invoiceHash,
-            'qr'            => $qr
+            'signedInvoice' => $this->xmlInvoice,
         ];
     }
 
@@ -97,7 +107,7 @@ class InvoiceSign
             throw new InvalidArgumentException('Failed to parse XML string');
         }
 
-        return $doc->C14N(false, false);
+       return $doc->C14N(false, false);
     }
 
     public function generateQRCode($invoiceHash, $digitalSignature): string
