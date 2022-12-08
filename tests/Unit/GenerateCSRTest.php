@@ -62,6 +62,8 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
         $X509->setPrivateKey(EC::loadPrivateKey($exported));
 
         $this->assertIsArray($X509->getCurrentCert());
+        $this->assertTrue($X509->validateSignature());
+
         $this->assertEquals('ecdsa-with-SHA256',$X509->getCurrentCert()['signatureAlgorithm']['algorithm']);
 
         $publicKeyX509 = $X509->getPublicKey()->toString('PKCS8');
