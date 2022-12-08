@@ -24,7 +24,7 @@ class InvoiceSign
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
         $this->certificate = $certificate;
-        $this->xmlInvoice = $xmlInvoice;
+        $this->xmlInvoice  = $xmlInvoice;
     }
 
     public function sign()
@@ -32,19 +32,15 @@ class InvoiceSign
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
         // remove unwanted tags
-        $extNode = $this->xmlDom->get('ext:UBLExtensions');
-        $signNode = $this->xmlDom->get('cac:Signature');
-        $qrNode = $this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
-
-        if ($extNode) {
+        if ($extNode = $this->xmlDom->get('ext:UBLExtensions')) {
             $extNode->remove();
         }
 
-        if ($signNode) {
+        if ($signNode = $this->xmlDom->get('cac:Signature')) {
             $signNode->remove();
         }
 
-        if ($qrNode) {
+        if ($qrNode = $this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]')) {
             $qrNode->parent()->remove();
         }
 
@@ -86,7 +82,7 @@ class InvoiceSign
             $this->xmlInvoice);
 
         return [
-            'hash' => $invoiceHash,
+            'hash'    => $invoiceHash,
             'invoice' => $this->xmlInvoice,
         ];
     }
@@ -102,7 +98,7 @@ class InvoiceSign
     private function getPureInvoiceString(): string
     {
         /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
-        $doc = new \DOMDocument();
+        $doc       = new \DOMDocument();
         $xmlString = $this->xmlDom->asXML();
 
         if ($doc->loadXML($xmlString, LIBXML_NOERROR) === false) {
