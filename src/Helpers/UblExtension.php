@@ -125,7 +125,8 @@ XML;
             [
                 $this->digitalSignature,
                 $this->certificate->getPlainCertificate(),
-                base64_encode(hash('sha256', $signedProprietiesXml)), // a hash for signed proprieties xml
+                // a hash for signed proprieties xml
+                base64_encode(hash('sha256', $signedProprietiesXml)),
                 $this->invoiceHash,
                 $signedProprietiesXml
             ],
