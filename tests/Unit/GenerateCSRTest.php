@@ -20,15 +20,19 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
     /** @test */
     public function shouldGenerateACsrWithProperiteis()
     {
+        $CN                     = 'Salla';
+        $country                = 'SA';
+        $organizationName       = "Salla Store";
+        $organizationalUnitName = '3311111111';
         try {
             $csr_request = GenerateCSR::fromRequest(
                 CSRRequest::make()
                     ->setUID('311111111101113')
                     ->setSerialNumber('200000', 'Salla Store', 'Merchant Name')
-                    ->setCommonName('Salla')
-                    ->setCountryName('SA')
-                    ->setOrganizationName('Salla Store')
-                    ->setOrganizationalUnitName('3311111111')
+                    ->setCommonName($CN)
+                    ->setCountryName($country)
+                    ->setOrganizationName($organizationName)
+                    ->setOrganizationalUnitName($organizationalUnitName)
                     ->setRegisteredAddress('3355  - حي الملك فهد مكة المكرمة 24347 - 7192')
                     ->setInvoiceType(true, true)
                     ->setIsSandBoxEnv(true)
@@ -37,22 +41,28 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
                 ->generate();
 
         } catch (\Exception $exception) {
-            //throw new \Exception($exception->getMessage());
+            throw new \Exception($exception->getMessage());
         }
 
         openssl_pkey_export($csr_request->getPrivateKey(), $exported);
 
-        $arraySubject = openssl_csr_get_subject($csr_request->getCsrContent());
-        $publicKey    = openssl_pkey_get_details(openssl_csr_get_public_key($csr_request->getCsrContent()))['key'];
-
-        $X509         = new X509();
-        $X509->loadCSR($csr_request->getCsrContent());
-
-        $X509->setPrivateKey(EC::loadPrivateKey($exported));
-
+        $publicKey = openssl_pkey_get_details(openssl_csr_get_public_key($csr_request->getCsrContent()))['key'];
         $this->assertEquals('OpenSSL key', get_resource_type($csr_request->getPrivateKey()));
 
+
+        $csrSubject = openssl_csr_get_subject($csr_request->getCsrContent());
+        $this->assertEquals($csrSubject['CN'], $CN);
+        $this->assertEquals($csrSubject['O'], $organizationName);
+        $this->assertEquals($csrSubject['OU'], $organizationalUnitName);
+        $this->assertEquals($csrSubject['C'], $country);
+
+
+        $X509 = new X509();
+        $X509->loadCSR($csr_request->getCsrContent());
+        $X509->setPrivateKey(EC::loadPrivateKey($exported));
+
         $this->assertIsArray($X509->getCurrentCert());
+        $this->assertEquals('ecdsa-with-SHA256',$X509->getCurrentCert()['signatureAlgorithm']['algorithm']);
 
         $publicKeyX509 = $X509->getPublicKey()->toString('PKCS8');
 
@@ -60,6 +70,6 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
 
         $this->assertIsString($publicKey);
 
-        $this->assertEquals(str_replace("\r\n","",$publicKeyX509),str_replace("\n","",$publicKey));
+        $this->assertEquals(str_replace("\r\n", "", $publicKeyX509), str_replace("\n", "", $publicKey));
     }
 }
