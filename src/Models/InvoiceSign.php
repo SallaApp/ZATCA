@@ -84,6 +84,7 @@ class InvoiceSign
         return [
             'hash'    => $invoiceHash,
             'invoice' => $this->xmlInvoice,
+            'qr' => $qr
         ];
     }
 

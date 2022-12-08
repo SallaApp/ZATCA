@@ -44,18 +44,14 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
     /** @test */
     public function canGeneratInvoiceHash()
     {
-        $xmlInvoice = file_get_contents(__DIR__ . '/files/Simplified_Invoice_org.xml');
+        $xmlInvoice = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
 
         $this->assertIsString($xmlInvoice);
 
-        $certificate = new Certificate(self::certificate, self::privateKey);
-
         $signInfo = (new InvoiceSign($xmlInvoice, new Certificate(self::certificate, self::privateKey)))->sign();
+        $this->assertStringContainsString($signInfo['hash'],$signInfo['invoice']);
+//        $xmlDoc = UXML::fromString($signInfo['invoice']);
+     //   $this->assertIsString();
 
-        $xmlDoc = UXML::fromString($signInfo['invoice']);
-        //dd($xmlDoc->get('ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sig:UBLDocumentSignatures')->asXML());
-        $doc = new \DOMDocument();
-        $doc->loadXML($signInfo['invoice']);
-        
     }
 }
