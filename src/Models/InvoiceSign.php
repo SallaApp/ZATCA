@@ -24,10 +24,10 @@ class InvoiceSign
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
         $this->certificate = $certificate;
-        $this->xmlInvoice  = $xmlInvoice;
+        $this->xmlInvoice = $xmlInvoice;
     }
 
-    public function signInvoice()
+    public function sign()
     {
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
@@ -36,24 +36,26 @@ class InvoiceSign
         $signNode = $this->xmlDom->get('cac:Signature');
         $qrNode = $this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
-        if($extNode){
+        if ($extNode) {
             $extNode->remove();
         }
 
-        if($signNode){
+        if ($signNode) {
             $signNode->remove();
         }
 
-        if($qrNode){
+        if ($qrNode) {
             $qrNode->parent()->remove();
         }
+
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @see page 52
          */
-        $invoiceHash = $this->generateInvoiceHash();
+        $invoiceHash = base64_encode(hash('sha256', $this->getPureInvoiceString(), true));
 
         /**
+         * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @see page 53
          */
         $digitalSignature = base64_encode(
@@ -84,8 +86,8 @@ class InvoiceSign
             $this->xmlInvoice);
 
         return [
-            'invoiceHash'   => $invoiceHash,
-            'signedInvoice' => $this->xmlInvoice,
+            'hash' => $invoiceHash,
+            'invoice' => $this->xmlInvoice,
         ];
     }
 
@@ -100,18 +102,19 @@ class InvoiceSign
     private function getPureInvoiceString(): string
     {
         /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
-        $doc       = new \DOMDocument();
+        $doc = new \DOMDocument();
         $xmlString = $this->xmlDom->asXML();
 
         if ($doc->loadXML($xmlString, LIBXML_NOERROR) === false) {
             throw new InvalidArgumentException('Failed to parse XML string');
         }
 
-       return $doc->C14N(false, false);
+        return $doc->C14N(false, false);
     }
 
-    public function generateQRCode($invoiceHash, $digitalSignature): string
+    private function generateQRCode(string $invoiceHash, string $digitalSignature): string
     {
+        // todo :: make sure you coverd all types
         $isSimplified = $this->xmlDom->get("cbc:InvoiceTypeCode")->asText() === "388";
 
         $issueDate = $this->xmlDom->get("cbc:IssueDate")->asText();
