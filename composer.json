@@ -27,7 +27,8 @@
         "ext-mbstring": "*",
         "robrichards/xmlseclibs": "^3.1",
         "josemmo/uxml": "^0.1.4",
-        "chillerlan/php-qrcode": "^4.3 || ^3.4"
+        "chillerlan/php-qrcode": "^4.3 || ^3.4",
+        "ext-tidy": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "~8.0"

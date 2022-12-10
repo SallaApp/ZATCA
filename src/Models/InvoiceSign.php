@@ -88,25 +88,33 @@ class InvoiceSign
         ];
     }
 
-
-    private function generateInvoiceHash(): string
-    {
-        $pureString = $this->getPureInvoiceString();
-
-        return base64_encode(hash('sha256', $pureString, true));
-    }
-
     private function getPureInvoiceString(): string
     {
-        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
-        $doc       = new \DOMDocument();
-        $xmlString = $this->xmlDom->asXML();
 
-        if ($doc->loadXML($xmlString, LIBXML_NOERROR) === false) {
+        $tidy = tidy_parse_string($this->xmlDom->asXML(), array(
+            'indent'        => TRUE,
+            'input-xml'     => TRUE,
+            'output-xml'    => TRUE,
+            'add-xml-space' => FALSE,
+            'indent-spaces' => 4,
+            'wrap'          => 0,
+        ));
+
+        $tidy->cleanRepair();
+
+
+        $doc = new \DOMDocument();
+        if ($doc->loadXML((string)$tidy, LIBXML_NOERROR) === false) {
             throw new InvalidArgumentException('Failed to parse XML string');
         }
 
-        return $doc->C14N(false, false);
+        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
+
+        $cnXml = $doc->C14N(false, false);
+
+        return str_replace(
+            array("<cbc:ProfileID>", "<cac:AccountingSupplierParty>"),
+            array("\n    <cbc:ProfileID>", "\n    \n    <cac:AccountingSupplierParty>"), $cnXml);
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
