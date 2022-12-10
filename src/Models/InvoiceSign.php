@@ -6,8 +6,8 @@ namespace Salla\ZATCA\Models;
 use Salla\ZATCA\GenerateQrCode;
 use Salla\ZATCA\Helpers\Certificate;
 use Salla\ZATCA\Helpers\UblExtension;
+use Salla\ZATCA\Helpers\UXML;
 use Salla\ZATCA\Tag;
-use UXML\UXML;
 
 class InvoiceSign
 {
@@ -24,31 +24,40 @@ class InvoiceSign
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
         $this->certificate = $certificate;
-        $this->xmlInvoice  = $xmlInvoice;
+        $this->xmlInvoice = $xmlInvoice;
     }
 
     public function sign()
     {
+        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
         // remove unwanted tags
-        if ($extNode = $this->xmlDom->get('ext:UBLExtensions')) {
-            $extNode->remove();
-        }
-
-        if ($signNode = $this->xmlDom->get('cac:Signature')) {
-            $signNode->remove();
-        }
-
-        if ($qrNode = $this->xmlDom->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]')) {
-            $qrNode->parent()->remove();
-        }
+        $this->xmlDom->removeByXpath('ext:UBLExtensions');
+        $this->xmlDom->removeByXpath('cac:Signature');
+        $this->xmlDom->removeByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @see page 52
          */
-        $invoiceHash = base64_encode(hash('sha256', $this->getPureInvoiceString(), true));
+        // to replace two space with four space (for SDK validation)
+        // todo :: test it in production
+        $xmlForhashing = preg_replace(
+            '/^[ ]+(?=<)/m',
+            '$0$0',
+            $this->xmlDom->element()->C14N(false, false)
+        );
+
+        // to add a new line for the following two tags (for SDK validation)
+        // todo :: test in in production
+        $xmlForhashing = str_replace(
+            ["<cbc:ProfileID>", "<cac:AccountingSupplierParty>"],
+            ["\n  <cbc:ProfileID>", "\n  \n  <cac:AccountingSupplierParty>"],
+            $xmlForhashing
+        );
+
+        $invoiceHash = base64_encode(hash('sha256',$xmlForhashing, true));
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
@@ -82,35 +91,9 @@ class InvoiceSign
             $this->xmlInvoice);
 
         return [
-            'hash'    => $invoiceHash,
+            'hash' => $invoiceHash,
             'invoice' => $this->xmlInvoice,
-            'qr' => $qr
         ];
-    }
-
-    private function getPureInvoiceString(): string
-    {
-
-        $tidy = tidy_parse_string($this->xmlDom->asXML(), array(
-            'indent'        => TRUE,
-            'input-xml'     => TRUE,
-            'output-xml'    => TRUE,
-            'add-xml-space' => FALSE,
-            'indent-spaces' => 4,
-            'wrap'          => 0,
-        ));
-
-        $tidy->cleanRepair();
-
-        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
-        $doc = new \DOMDocument();
-        if ($doc->loadXML((string)$tidy, LIBXML_NOERROR) === false) {
-            throw new InvalidArgumentException('Failed to parse XML string');
-        }
-
-        return str_replace(
-            array("<cbc:ProfileID>", "<cac:AccountingSupplierParty>"),
-            array("\n    <cbc:ProfileID>", "\n    \n    <cac:AccountingSupplierParty>"), $doc->C14N(false, false));
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
