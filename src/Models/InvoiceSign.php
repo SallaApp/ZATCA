@@ -110,11 +110,9 @@ class InvoiceSign
 
         /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
 
-        $cnXml = $doc->C14N(false, false);
-
         return str_replace(
             array("<cbc:ProfileID>", "<cac:AccountingSupplierParty>"),
-            array("\n    <cbc:ProfileID>", "\n    \n    <cac:AccountingSupplierParty>"), $cnXml);
+            array("\n    <cbc:ProfileID>", "\n    \n    <cac:AccountingSupplierParty>"), $doc->C14N(false, false));
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
