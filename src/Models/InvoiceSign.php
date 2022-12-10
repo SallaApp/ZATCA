@@ -102,13 +102,11 @@ class InvoiceSign
 
         $tidy->cleanRepair();
 
-
+        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
         $doc = new \DOMDocument();
         if ($doc->loadXML((string)$tidy, LIBXML_NOERROR) === false) {
             throw new InvalidArgumentException('Failed to parse XML string');
         }
-
-        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
 
         return str_replace(
             array("<cbc:ProfileID>", "<cac:AccountingSupplierParty>"),
