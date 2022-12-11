@@ -21,6 +21,9 @@ class InvoiceSign
      */
     protected $certificate;
 
+    /** @var \UXML\UXML  */
+    protected $xmlDom;
+
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
         $this->certificate = $certificate;
@@ -35,29 +38,11 @@ class InvoiceSign
         // remove unwanted tags
         $this->xmlDom->removeByXpath('ext:UBLExtensions');
         $this->xmlDom->removeByXpath('cac:Signature');
-        $this->xmlDom->removeByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+        $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
-        /**
-         * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
-         * @see page 52
-         */
-        // to replace two space with four space (for SDK validation)
-        // todo :: test it in production
-        $xmlForhashing = preg_replace(
-            '/^[ ]+(?=<)/m',
-            '$0$0',
-            $this->xmlDom->element()->C14N(false, false)
-        );
+        file_put_contents(__DIR__.'/../../tests/newPure.xml', $this->getPureInvoiceString());
 
-        // to add a new line for the following two tags (for SDK validation)
-        // todo :: test in in production
-        $xmlForhashing = str_replace(
-            ["<cbc:ProfileID>", "<cac:AccountingSupplierParty>"],
-            ["\n  <cbc:ProfileID>", "\n  \n  <cac:AccountingSupplierParty>"],
-            $xmlForhashing
-        );
-
-        $invoiceHash = base64_encode(hash('sha256',$xmlForhashing, true));
+       $invoiceHash = base64_encode(hash('sha256', $this->getPureInvoiceString(), true));
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
@@ -67,36 +52,48 @@ class InvoiceSign
             $this->certificate->getPrivateKey()->sign(base64_decode($invoiceHash))
         );
 
-        $ublExtSigned = (new UblExtension)
+       $ublExtension = (new UblExtension)
             ->setCertificate($this->certificate)
             ->setInvoiceHash($invoiceHash)
             ->setDigitalSignature($digitalSignature)
             ->populateUblSignature();
 
-        $qr = $this->generateQRCode(
+
+        $signedInvoice = $this->xmlDom->getSingedInvoice(
+            $this->xmlInvoice,
+            $ublExtension,
+            $this->certificate,
             $invoiceHash,
             $digitalSignature
         );
 
-        // now merge the xmlInvoice with UBLExt and add the qr code value
-        $this->xmlInvoice = str_replace(
-            [
-                'SET_UBL_EXTENSIONS_STRING',
-                'SET_QR_CODE_DATA'
-            ],
-            [
-                $ublExtSigned,
-                $qr
-            ],
-            $this->xmlInvoice);
-
-        return [
-            'hash' => $invoiceHash,
-            'invoice' => $this->xmlInvoice,
-        ];
+        return ['hash'    => $invoiceHash,'invoice' => $signedInvoice];
     }
 
-    private function generateQRCode(string $invoiceHash, string $digitalSignature): string
+
+    private function getPureInvoiceString(): string
+    {
+
+        $doc = new \DOMDocument();
+        if ($doc->loadXML($this->xmlDom->asXML(), LIBXML_NOERROR) === false) {
+            throw new InvalidArgumentException('Failed to parse XML string');
+        }
+        $doc->formatOutput = true;
+
+        $formatted =  preg_replace(
+            '/^[ ]+(?=<)/m',
+            '$0$0',
+            $doc->C14N(false, false)
+        );
+
+
+        return str_replace(
+            array("<cbc:ProfileID>", "<cac:AccountingSupplierParty>"),
+            array("\n    <cbc:ProfileID>", "\n    \n    <cac:AccountingSupplierParty>"), $formatted);
+    }
+
+
+    private function generateQRCode(string $invoiceHash, string $digitalSignature, $publicKey,$certificateSignature): string
     {
         // todo :: make sure you coverd all types
         $isSimplified = $this->xmlDom->get("cbc:InvoiceTypeCode")->asText() === "388";
