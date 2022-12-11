@@ -150,23 +150,25 @@ class UblExtension
         $contentSignature = $singInformation->add('sac:SignatureInformation');
         $contentSignature->add('cbc:ID', 'urn:oasis:names:specification:ubl:signature:1');
         $contentSignature->add('sbc:ReferencedSignatureID', 'urn:oasis:names:specification:ubl:signature:Invoice');
-        $signIatur = $contentSignature->add('ds:Signature', null, [
+
+        $signature = $contentSignature->add('ds:Signature', null, [
             'xmlns:ds' => 'http://www.w3.org/2000/09/xmldsig#',
             'Id'       => 'signature'
         ]);
 
-        $signInfo = $signIatur->add('ds:SignedInfo');
-      /*  $signInfo->add('ds:SignedInfo');*/
+        $signInfo = $signature->add('ds:SignedInfo');
         $signInfo->add('ds:CanonicalizationMethod', null, [
             'Algorithm' => 'http://www.w3.org/2006/12/xml-c14n11'
         ]);
         $signInfo->add('ds:SignatureMethod', null, [
             'Algorithm' => 'http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256'
         ]);
+
         $reference  = $signInfo->add('ds:Reference', null, [
             'Id'  => 'invoiceSignedData',
             'URI' => ''
         ]);
+
         $transforms = $reference->add('ds:Transforms');
         $xPath      = $transforms->add('ds:Transform', null, [
             'Algorithm' => "http://www.w3.org/TR/1999/REC-xpath-19991116"
@@ -177,6 +179,7 @@ class UblExtension
             'Algorithm' => "http://www.w3.org/TR/1999/REC-xpath-19991116"
         ]);
         $xPath->add('ds:XPath', 'not(//ancestor-or-self::cac:Signature)');
+
 
         $xPath = $transforms->add('ds:Transform', null, [
             'Algorithm' => "http://www.w3.org/TR/1999/REC-xpath-19991116"
@@ -193,29 +196,28 @@ class UblExtension
 
         $reference->add('ds:DigestValue', $this->invoiceHash);
 
-        $digistValue = $signInfo->add('ds:Reference', null, [
+        $digestValue = $signInfo->add('ds:Reference', null, [
             'Type' => "http://www.w3.org/2000/09/xmldsig#SignatureProperties",
             'URI'  => "#xadesSignedProperties"
         ]);
 
-        $digistValue->add('ds:DigestMethod', null, [
+        $digestValue->add('ds:DigestMethod', null, [
             'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
         ]);
 
-        $digistValue->add('ds:DigestValue', 'SET_SIGNED_PROPERTIES_HASH');
+        $digestValue->add('ds:DigestValue', 'SET_SIGNED_PROPERTIES_HASH');
 
-        $signIatur->add('ds:SignatureValue', $this->digitalSignature);
+        $signature->add('ds:SignatureValue', $this->digitalSignature);
 
-        $keyInfo  = $signIatur->add('ds:KeyInfo');
+        $keyInfo  = $signature->add('ds:KeyInfo');
         $x509Data = $keyInfo->add('ds:X509Data');
         $x509Data->add('ds:X509Certificate', $this->certificate->getPlainCertificate());
 
-        $dsObject = $signIatur->add('ds:Object');
+        $dsObject = $signature->add('ds:Object');
         $dsObject->add('xades:QualifyingProperties', 'SET_SIGNED_PROPERTIES_XML', [
             'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
             'Target'      => "signature"
         ]);
-
 
         return $xml->asXML();
     }

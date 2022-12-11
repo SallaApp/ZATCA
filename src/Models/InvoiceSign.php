@@ -78,8 +78,8 @@ class InvoiceSign
         if ($doc->loadXML($this->xmlDom->asXML(), LIBXML_NOERROR) === false) {
             throw new InvalidArgumentException('Failed to parse XML string');
         }
-        $doc->formatOutput = true;
 
+        $doc->formatOutput = true;
         $formatted =  preg_replace(
             '/^[ ]+(?=<)/m',
             '$0$0',
