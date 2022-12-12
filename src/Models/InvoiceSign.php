@@ -45,9 +45,9 @@ class InvoiceSign
         $this->xmlDom->removeByXpath('cac:Signature');
         $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
-        $xmlForHash = $this->xmlDom->element()->C14N(false, false);
-
-        $invoiceHash = base64_encode(hash('sha256', $xmlForHash, true));
+        $invoiceHash = base64_encode(
+            hash('sha256', $this->xmlDom->element()->C14N(false, false), true)
+        );
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
