@@ -1,11 +1,8 @@
 <?php
 
-
 namespace Salla\ZATCA\Helpers;
 
-
 use phpseclib3\File\X509;
-use UXML\UXML;
 
 /**
  * Class UblExtension
@@ -13,12 +10,11 @@ use UXML\UXML;
  */
 class UblExtension
 {
-
-    const SAC                      = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureAggregateComponents-2';
-    const INVOICE_SIGNATURE        = "urn:oasis:names:specification:ubl:signature:Invoice";
+    const SAC = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureAggregateComponents-2';
+    const INVOICE_SIGNATURE = "urn:oasis:names:specification:ubl:signature:Invoice";
     const INVOICE_SIGNATURE_METHOD = "urn:oasis:names:specification:ubl:dsig:enveloped:xades";
-    const SBS                      = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2';
-    const SIG                      = 'urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2';
+    const SBS = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2';
+    const SIG = 'urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2';
 
     /**
      * @var Certificate $certificate
@@ -46,71 +42,42 @@ class UblExtension
      */
     public function populateUblSignature()
     {
-        $signedProprietiesXml = $this->formattedSingPropertiesXml();
-        $ublProprietiesXML    = $this->formattedUblExtensionPropertiesXml();
+        $signedProprietiesXml = $this->buildSignaturePart();
 
-        return $this->formattedUblExtensionXml($signedProprietiesXml, $ublProprietiesXML);
-    }
-
-
-
-    private function formattedSingPropertiesXml()
-    {
-        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
-            $signPart = $this->buildSignaturePart();
-            $signPart = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',"",$signPart);
-        return preg_replace('!^[^>]+>(\r\n|\n)!', '', $signPart);
-    }
-
-
-    /**
-     * @throws \DOMException
-     */
-    private function formattedUblExtensionPropertiesXml(): string
-    {
-        //remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
-        $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $this->buildUblExtension());
-
-        return str_replace('<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">', '<ext:UBLExtension>', $formatted);
-    }
-
-    private function formattedUblExtensionXml($signedProprietiesXml, $ublProprietiesXML)
-    {
-        $allUblExtension = str_replace([
-            'SET_SIGNED_PROPERTIES_XML',
-            'SET_SIGNED_PROPERTIES_HASH'
-        ],
-            [
-                $signedProprietiesXml,
-                base64_encode(hash('sha256', $signedProprietiesXml)),
-            ], $ublProprietiesXML);
-
-
-        /*  $doc = new \DOMDocument();
-      $doc->loadXML(\Salla\ZATCA\Helpers\UXML::fromString($allUblExtension)->asXML());
-      $doc->formatOutput = true;*/
+        // Fix the indentation from 2 to 4
         return preg_replace(
             '/^[ ]+(?=<)/m',
             '$0$0',
-            $allUblExtension
+            // inject the values to the xml
+            str_replace(
+                [
+                    'SET_SIGNED_PROPERTIES_XML',
+                    'SET_SIGNED_PROPERTIES_HASH'
+                ],
+                [
+                    $signedProprietiesXml,
+                    base64_encode(hash('sha256', $signedProprietiesXml)),
+                ],
+                $this->buildUblExtension()
+            )
         );
     }
 
     private function buildSignaturePart(): string
     {
-        $xml              = \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
+        $xml = \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
             'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-            'Id'          => 'xadesSignedProperties'
+            'Id' => 'xadesSignedProperties'
         ]);
         $signedProperties = $xml->add('xades:SignedSignatureProperties');
 
         $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z',);
         $signingCertificate = $signedProperties->add('xades:SigningCertificate');
-        $cert               = $signingCertificate->add('xades:Cert');
+        $cert = $signingCertificate->add('xades:Cert');
 
         $certDigest = $cert->add('xades:CertDigest');
         $certDigest->add('ds:DigestMethod', null, [
-            'xmlns:ds'  => "http://www.w3.org/2000/09/xmldsig#",
+            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#",
             'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
         ]);
         $certDigest->add('ds:DigestValue', $this->certificate->getHash(), [
@@ -125,11 +92,12 @@ class UblExtension
             'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
         ]);
 
-        //file_put_contents(__DIR__.'/../../tests/signPart.xml',$xml->asXML());
+        // file_put_contents(__DIR__.'/../../tests/signPart.xml',$xml->asXML());
 
-       // $this->signingXmlPart = $xml;
+        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
+        $signPart = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"', "", $xml->asXML());
 
-        return $xml->asXML();
+        return preg_replace('!^[^>]+>(\r\n|\n)!', '', $signPart);
     }
 
 
@@ -140,7 +108,7 @@ class UblExtension
     {
         $xml = \Salla\ZATCA\Helpers\UXML::newInstance("ext:UBLExtension");
         $xml->add('ext:ExtensionURI', 'urn:oasis:names:specification:ubl:dsig:enveloped:xades');
-        $content         = $xml->add('ext:ExtensionContent');
+        $content = $xml->add('ext:ExtensionContent');
         $singInformation = $content->add('sig:UBLDocumentSignatures', null, [
             'xmlns:sig' => self::SIG,
             'xmlns:sac' => self::SAC,
@@ -153,7 +121,7 @@ class UblExtension
 
         $signature = $contentSignature->add('ds:Signature', null, [
             'xmlns:ds' => 'http://www.w3.org/2000/09/xmldsig#',
-            'Id'       => 'signature'
+            'Id' => 'signature'
         ]);
 
         $signInfo = $signature->add('ds:SignedInfo');
@@ -164,13 +132,13 @@ class UblExtension
             'Algorithm' => 'http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256'
         ]);
 
-        $reference  = $signInfo->add('ds:Reference', null, [
-            'Id'  => 'invoiceSignedData',
+        $reference = $signInfo->add('ds:Reference', null, [
+            'Id' => 'invoiceSignedData',
             'URI' => ''
         ]);
 
         $transforms = $reference->add('ds:Transforms');
-        $xPath      = $transforms->add('ds:Transform', null, [
+        $xPath = $transforms->add('ds:Transform', null, [
             'Algorithm' => "http://www.w3.org/TR/1999/REC-xpath-19991116"
         ]);
         $xPath->add('ds:XPath', 'not(//ancestor-or-self::ext:UBLExtensions)');
@@ -198,7 +166,7 @@ class UblExtension
 
         $digestValue = $signInfo->add('ds:Reference', null, [
             'Type' => "http://www.w3.org/2000/09/xmldsig#SignatureProperties",
-            'URI'  => "#xadesSignedProperties"
+            'URI' => "#xadesSignedProperties"
         ]);
 
         $digestValue->add('ds:DigestMethod', null, [
@@ -209,17 +177,20 @@ class UblExtension
 
         $signature->add('ds:SignatureValue', $this->digitalSignature);
 
-        $keyInfo  = $signature->add('ds:KeyInfo');
+        $keyInfo = $signature->add('ds:KeyInfo');
         $x509Data = $keyInfo->add('ds:X509Data');
         $x509Data->add('ds:X509Certificate', $this->certificate->getPlainCertificate());
 
         $dsObject = $signature->add('ds:Object');
         $dsObject->add('xades:QualifyingProperties', 'SET_SIGNED_PROPERTIES_XML', [
             'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-            'Target'      => "signature"
+            'Target' => "signature"
         ]);
 
-        return $xml->asXML();
+        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
+        $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
+
+        return str_replace('<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">', '<ext:UBLExtension>', $formatted);
     }
 
     public function setDigitalSignature(string $digitalSignature): UblExtension
@@ -227,7 +198,6 @@ class UblExtension
         $this->digitalSignature = $digitalSignature;
         return $this;
     }
-
 
     public function setInvoiceHash(string $invoiceHash): UblExtension
     {
@@ -240,5 +210,4 @@ class UblExtension
         $this->certificate = $certificate;
         return $this;
     }
-
 }
