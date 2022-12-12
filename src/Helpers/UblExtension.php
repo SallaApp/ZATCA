@@ -11,8 +11,6 @@ use phpseclib3\File\X509;
 class UblExtension
 {
     const SAC = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureAggregateComponents-2';
-    const INVOICE_SIGNATURE = "urn:oasis:names:specification:ubl:signature:Invoice";
-    const INVOICE_SIGNATURE_METHOD = "urn:oasis:names:specification:ubl:dsig:enveloped:xades";
     const SBS = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2';
     const SIG = 'urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2';
 
@@ -20,11 +18,6 @@ class UblExtension
      * @var Certificate $certificate
      */
     protected $certificate;
-
-    protected $ublExtensionXml;
-
-    protected $signingXmlPart;
-
 
     /**
      * @var string
