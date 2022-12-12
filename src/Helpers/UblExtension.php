@@ -158,28 +158,28 @@ class UblExtension
             ])->add('xades:SignedSignatureProperties');
         }
 
-      //  $signedProperties = $xml->add('xades:SignedSignatureProperties');
-
         $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z',);
         $signingCertificate = $signedProperties->add('xades:SigningCertificate');
         $cert               = $signingCertificate->add('xades:Cert');
 
         $certDigest = $cert->add('xades:CertDigest');
-        $certDigest->add('ds:DigestMethod', null, [
+
+        $arrDigest = [
             'xmlns:ds'  => "http://www.w3.org/2000/09/xmldsig#",
             'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
-        ]);
-        $certDigest->add('ds:DigestValue', $this->certificate->getHash(), [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
-        ]);
+        ];
+        if($dsObject){
+           unset($arrDigest['xmlns:ds']);
+        }
+        $certDigest->add('ds:DigestMethod', null,$arrDigest );
+        $certDigest->add('ds:DigestValue', $this->certificate->getHash(),
+           $dsObject ? [] : ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
 
         $issuerSerial = $cert->add('xades:IssuerSerial');
-        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING), [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
-        ]);
-        $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString(), [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
-        ]);
+        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING),
+            $dsObject ? [] :  ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
+        $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString(),
+            $dsObject ? [] :  ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
 
         if ($dsObject) {
             return null;
