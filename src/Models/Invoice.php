@@ -6,9 +6,9 @@ namespace Salla\ZATCA\Models;
 
 class Invoice
 {
-    private $hash;
+    protected $hash;
 
-    private $invoice;
+    protected $invoice;
 
     public function __construct(string $invoice, string $hash)
     {
