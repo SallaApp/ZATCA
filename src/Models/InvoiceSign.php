@@ -69,7 +69,7 @@ class InvoiceSign
             ],
             [
                 $ublExtension,
-                $this->generateQRCode($invoiceHashEncoded, $digitalSignature)
+                $this->generateQRCode($invoiceHash, $digitalSignature)
             ],
             $this->xmlInvoice);
 
