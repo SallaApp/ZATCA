@@ -45,7 +45,9 @@ class UXML
     public static function fromString(string $xmlString): self
     {
         $doc                     = new DOMDocument();
-        $doc->preserveWhiteSpace = false;
+        $doc->preserveWhiteSpace = true;
+        $doc->formatOutput = true;
+
         if ($doc->loadXML($xmlString) === false) {
             throw new InvalidArgumentException('Failed to parse XML string');
         }
@@ -324,60 +326,5 @@ class UXML
     public function __toString(): string
     {
         return $this->asXML(null, 'UTF-8', false);
-    }
-
-
-    public function getSingedInvoice(
-        $xmlInvoice,
-        $ublExtension,
-        \Salla\ZATCA\Helpers\Certificate $certificate,
-        string $invoiceHash,
-        string $digitalSignature)
-    {
-
-
-        $qr = $this->generateQRCode(
-            $invoiceHash,
-            $digitalSignature,
-            $certificate->getPlainPublicKey(),
-            $certificate->getCertificateSignature());
-
-        return str_replace(
-            [
-                'SET_UBL_EXTENSIONS_STRING',
-                'SET_QR_CODE_DATA'
-            ],
-            [
-                $ublExtension,
-                $qr
-            ],
-            $xmlInvoice);
-    }
-
-
-    private function generateQRCode(string $invoiceHash, string $digitalSignature, $publicKey, $certificateSignature): string
-    {
-        // todo :: make sure you coverd all types
-        $isSimplified = $this->get("cbc:InvoiceTypeCode")->asText() === "388";
-
-        $issueDate = $this->get("cbc:IssueDate")->asText();
-        $issueTime = $this->get("cbc:IssueTime")->asText();
-
-        $qrArray = [
-            new Tag(1, $this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText()),
-            new Tag(2, $this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()),
-            new Tag(3, $issueDate . 'T' . $issueTime . 'Z'),
-            new Tag(4, $this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()),
-            new Tag(5, $this->get("cac:TaxTotal")->asText()),
-            new Tag(6, $invoiceHash),
-            new Tag(7, $digitalSignature),
-            new Tag(8, base64_decode($publicKey))
-        ];
-
-        if ($isSimplified) {
-            $qrArray = array_merge($qrArray, [new Tag(9, $certificateSignature)]);
-        }
-
-        return GenerateQrCode::fromArray($qrArray)->toBase64();
     }
 }
