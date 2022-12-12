@@ -27,13 +27,13 @@ class InvoiceSign
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
         $this->certificate = $certificate;
-        $this->xmlInvoice = $xmlInvoice;
+        $this->xmlInvoice  = $xmlInvoice;
     }
 
-    public function sign()
+    public function sign(): Invoice
     {
         // we need to make sure the orignal xml have 4 indentation
-        if (!str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
+        if (! str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
             $this->xmlInvoice = preg_replace('/^[ ]+(?=<)/m', '$0$0', $this->xmlInvoice);
         }
 
@@ -44,9 +44,8 @@ class InvoiceSign
         $this->xmlDom->removeByXpath('ext:UBLExtensions');
         $this->xmlDom->removeByXpath('cac:Signature');
         $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
-
         $invoiceHashBinary = hash('sha256', $this->xmlDom->element()->C14N(false, false), true);
-        $invoiceHash = base64_encode($invoiceHashBinary);
+        $invoiceHash       = base64_encode($invoiceHashBinary);
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
@@ -62,20 +61,21 @@ class InvoiceSign
             ->setDigitalSignature($digitalSignature)
             ->populateUblSignature();
 
-        // todo :: inject the xml nodes
+
         $signedInvoice = str_replace(
             [
-                "\n    <cbc:ProfileID>",
-                'SET_QR_CODE_DATA'
+                "<ext:UBLExtensions/>",
+                '<cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">TEMP_QR_VALUE</cbc:EmbeddedDocumentBinaryObject>'
             ],
             [
-                $ublExtension . "    <cbc:ProfileID>",
-                $this->generateQRCode($invoiceHash, $digitalSignature)
+                "<ext:UBLExtensions>" . $ublExtension . "</ext:UBLExtensions>",
+                "<cbc:EmbeddedDocumentBinaryObject mimeCode=\"text/plain\">" . $this->generateQRCode($invoiceHash, $digitalSignature) . "</cbc:EmbeddedDocumentBinaryObject>"
             ],
-            $this->xmlDom->asXml());
+            $this->xmlInvoice);
+            //we assume that the xmlInvoice contain this nodes(<ext:UBLExtensions/>,'<cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">TEMP_QR_VALUE</cbc:EmbeddedDocumentBinaryObject>')
+            //So, if not passed with this nodes then you need to reproduce this replace part by your qualified nodes
 
-        // todo :: create a new class called Invoice, hash, invoice
-        return ['hash' => $invoiceHash, 'invoice' => $signedInvoice];
+        return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash);
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string

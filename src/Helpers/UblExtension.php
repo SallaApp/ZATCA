@@ -41,65 +41,9 @@ class UblExtension
      */
     public function populateUblSignature()
     {
-        return $this->buildUblExtension();
-
-        $signedProprietiesXml = $this->buildSignaturePart();
-
-        // Fix the indentation from 2 to 4
         return preg_replace(
             '/^[ ]+(?=<)/m',
-            '$0$0',
-            // inject the values to the xml
-            str_replace(
-                [
-                    'SET_SIGNED_PROPERTIES_XML',
-                    'SET_SIGNED_PROPERTIES_HASH'
-                ],
-                [
-                    $signedProprietiesXml,
-                    base64_encode(hash('sha256', $signedProprietiesXml)),
-                ],
-                $this->buildUblExtension()
-            )
-        );
-    }
-
-    private function buildSignaturePart(): string
-    {
-        $xml = \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
-            'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-            'Id' => 'xadesSignedProperties'
-        ]);
-
-        $signedProperties = $xml->add('xades:SignedSignatureProperties');
-
-        $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z',);
-        $signingCertificate = $signedProperties->add('xades:SigningCertificate');
-        $cert = $signingCertificate->add('xades:Cert');
-
-        $certDigest = $cert->add('xades:CertDigest');
-        $certDigest->add('ds:DigestMethod', null, [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#",
-            'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
-        ]);
-        $certDigest->add('ds:DigestValue', $this->certificate->getHash(), [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
-        ]);
-
-        $issuerSerial = $cert->add('xades:IssuerSerial');
-        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING), [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
-        ]);
-        $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString(), [
-            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
-        ]);
-
-        // file_put_contents(__DIR__.'/../../tests/signPart.xml',$xml->asXML());
-
-        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
-        $signPart = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"', "", $xml->asXML());
-
-        return preg_replace('!^[^>]+>(\r\n|\n)!', '', $signPart);
+            '$0$0', $this->buildUblExtension());
     }
 
 
@@ -108,7 +52,7 @@ class UblExtension
      */
     private function buildUblExtension(): string
     {
-        $signedProprietiesXml = $this->buildSignaturePart();
+        $signedProprietiesXml = $this->buildSignatureObject();
 
         $xml = \Salla\ZATCA\Helpers\UXML::newInstance("ext:UBLExtension");
         $xml->add('ext:ExtensionURI', 'urn:oasis:names:specification:ubl:dsig:enveloped:xades');
@@ -184,19 +128,68 @@ class UblExtension
         $keyInfo = $signature->add('ds:KeyInfo');
         $x509Data = $keyInfo->add('ds:X509Data');
         $x509Data->add('ds:X509Certificate', $this->certificate->getPlainCertificate());
-
-        // todo :: add the object
-//        $dsObject = $signature->add('ds:Object');
-//        $dsObject->add('xades:QualifyingProperties', $signedProprietiesXml, [
-//            'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-//            'Target' => "signature"
-//        ]);
+        $dsObject = $signature->add('ds:Object');
+        $this->buildSignatureObject($dsObject);
 
         // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
         $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
-
+        $formatted = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"', "",$formatted);
         return str_replace('<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">', '<ext:UBLExtension>', $formatted);
     }
+
+    private function buildSignatureObject($dsObject = null):? string
+    {
+        $xml = null;
+        if ($dsObject) {
+            $xml = $dsObject->add('xades:QualifyingProperties', null, [
+                'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+                'Target'      => "signature"
+            ]);
+
+            $signedProperties =  $xml->add("xades:SignedProperties", null, [
+                'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+                'Id'          => 'xadesSignedProperties'
+            ])->add('xades:SignedSignatureProperties');
+        }
+        else {
+            $signedProperties = $xml= \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
+                'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+                'Id'          => 'xadesSignedProperties'
+            ])->add('xades:SignedSignatureProperties');
+        }
+
+      //  $signedProperties = $xml->add('xades:SignedSignatureProperties');
+
+        $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z',);
+        $signingCertificate = $signedProperties->add('xades:SigningCertificate');
+        $cert               = $signingCertificate->add('xades:Cert');
+
+        $certDigest = $cert->add('xades:CertDigest');
+        $certDigest->add('ds:DigestMethod', null, [
+            'xmlns:ds'  => "http://www.w3.org/2000/09/xmldsig#",
+            'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
+        ]);
+        $certDigest->add('ds:DigestValue', $this->certificate->getHash(), [
+            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
+        ]);
+
+        $issuerSerial = $cert->add('xades:IssuerSerial');
+        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING), [
+            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
+        ]);
+        $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString(), [
+            'xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"
+        ]);
+
+        if ($dsObject) {
+            return null;
+        }
+
+        $signPart = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"', "", $signedProperties->asXML());
+        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
+        return preg_replace('!^[^>]+>(\r\n|\n)!', '', $signPart);
+    }
+
 
     public function setDigitalSignature(string $digitalSignature): UblExtension
     {
