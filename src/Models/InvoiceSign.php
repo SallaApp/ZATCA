@@ -21,7 +21,7 @@ class InvoiceSign
      */
     protected $certificate;
 
-    /** @var \UXML\UXML  */
+    /** @var \UXML\UXML */
     protected $xmlDom;
 
     public function __construct(string $xmlInvoice, Certificate $certificate)
@@ -32,6 +32,11 @@ class InvoiceSign
 
     public function sign()
     {
+        // we need to make sure the orignal xml have 4 indentation
+        if (!str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
+            $this->xmlInvoice = preg_replace('/^[ ]+(?=<)/m', '$0$0', $this->xmlInvoice);
+        }
+
         /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
@@ -40,9 +45,9 @@ class InvoiceSign
         $this->xmlDom->removeByXpath('cac:Signature');
         $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
-        file_put_contents(__DIR__.'/../../tests/newPure.xml', $this->getPureInvoiceString());
+        $xmlForHash = $this->xmlDom->element()->C14N(false, false);
 
-       $invoiceHash = base64_encode(hash('sha256', $this->getPureInvoiceString(), true));
+        $invoiceHash = base64_encode(hash('sha256', $xmlForHash, true));
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
@@ -52,48 +57,28 @@ class InvoiceSign
             $this->certificate->getPrivateKey()->sign(base64_decode($invoiceHash))
         );
 
-       $ublExtension = (new UblExtension)
+        $ublExtension = (new UblExtension)
             ->setCertificate($this->certificate)
             ->setInvoiceHash($invoiceHash)
             ->setDigitalSignature($digitalSignature)
             ->populateUblSignature();
 
+        $signedInvoice = str_replace(
+            [
+                'SET_UBL_EXTENSIONS_STRING',
+                'SET_QR_CODE_DATA'
+            ],
+            [
+                $ublExtension,
+                $this->generateQRCode($invoiceHash, $digitalSignature)
+            ],
+            $this->xmlInvoice);
 
-        $signedInvoice = $this->xmlDom->getSingedInvoice(
-            $this->xmlInvoice,
-            $ublExtension,
-            $this->certificate,
-            $invoiceHash,
-            $digitalSignature
-        );
-
-        return ['hash'    => $invoiceHash,'invoice' => $signedInvoice];
+        // todo :: create a new class called Invoice, hash, invoice
+        return ['hash' => $invoiceHash, 'invoice' => $signedInvoice];
     }
 
-
-    private function getPureInvoiceString(): string
-    {
-
-        $doc = new \DOMDocument();
-        if ($doc->loadXML($this->xmlDom->asXML(), LIBXML_NOERROR) === false) {
-            throw new InvalidArgumentException('Failed to parse XML string');
-        }
-
-        $doc->formatOutput = true;
-        $formatted =  preg_replace(
-            '/^[ ]+(?=<)/m',
-            '$0$0',
-            $doc->C14N(false, false)
-        );
-
-
-        return str_replace(
-            array("<cbc:ProfileID>", "<cac:AccountingSupplierParty>"),
-            array("\n    <cbc:ProfileID>", "\n    \n    <cac:AccountingSupplierParty>"), $formatted);
-    }
-
-
-    private function generateQRCode(string $invoiceHash, string $digitalSignature, $publicKey,$certificateSignature): string
+    private function generateQRCode(string $invoiceHash, string $digitalSignature): string
     {
         // todo :: make sure you coverd all types
         $isSimplified = $this->xmlDom->get("cbc:InvoiceTypeCode")->asText() === "388";
@@ -106,7 +91,7 @@ class InvoiceSign
             new Tag(2, $this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()),
             new Tag(3, $issueDate . 'T' . $issueTime . 'Z'),
             new Tag(4, $this->xmlDom->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()),
-            new Tag(5, $this->xmlDom->get("cac:TaxTotal")->asText()),
+            new Tag(5, trim($this->xmlDom->get("cac:TaxTotal")->asText())),
             new Tag(6, $invoiceHash),
             new Tag(7, $digitalSignature),
             new Tag(8, base64_decode($this->certificate->getPlainPublicKey()))
