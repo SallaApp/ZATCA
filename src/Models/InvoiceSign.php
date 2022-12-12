@@ -45,16 +45,15 @@ class InvoiceSign
         $this->xmlDom->removeByXpath('cac:Signature');
         $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
-        $invoiceHash = base64_encode(
-            hash('sha256', $this->xmlDom->element()->C14N(false, false), true)
-        );
+        $invoiceHashBinary = hash('sha256', $this->xmlDom->element()->C14N(false, false), true);
+        $invoiceHash = base64_encode($invoiceHashBinary);
 
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @see page 53
          */
         $digitalSignature = base64_encode(
-            $this->certificate->getPrivateKey()->sign(base64_decode($invoiceHash))
+            $this->certificate->getPrivateKey()->sign($invoiceHashBinary)
         );
 
         $ublExtension = (new UblExtension)
@@ -70,7 +69,7 @@ class InvoiceSign
             ],
             [
                 $ublExtension,
-                $this->generateQRCode($invoiceHash, $digitalSignature)
+                $this->generateQRCode($invoiceHashEncoded, $digitalSignature)
             ],
             $this->xmlInvoice);
 
