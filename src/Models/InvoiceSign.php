@@ -72,15 +72,14 @@ class InvoiceSign
                 "<cbc:EmbeddedDocumentBinaryObject mimeCode=\"text/plain\">" . $this->generateQRCode($invoiceHash, $digitalSignature) . "</cbc:EmbeddedDocumentBinaryObject>"
             ],
             $this->xmlInvoice);
-            //we assume that the xmlInvoice contain this nodes(<ext:UBLExtensions/>,'<cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">TEMP_QR_VALUE</cbc:EmbeddedDocumentBinaryObject>')
-            //So, if not passed with this nodes then you need to reproduce this replace part by your qualified nodes
+            //we assume that the $this->xmlInvoice contain this nodes(<ext:UBLExtensions/>,'<cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">TEMP_QR_VALUE</cbc:EmbeddedDocumentBinaryObject>')
+            //So, if $this->xmlInvoice not passed with this nodes then you need to reproduce this replace part by your qualified nodes
 
         return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash);
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
     {
-        // todo :: make sure you coverd all types
         $isSimplified = $this->xmlDom->get("cbc:InvoiceTypeCode")->asText() === "388";
 
         $issueDate = $this->xmlDom->get("cbc:IssueDate")->asText();
