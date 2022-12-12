@@ -36,12 +36,13 @@ class UblExtension
      */
     protected $digitalSignature;
 
-
     /**
      * @throws \DOMException
      */
     public function populateUblSignature()
     {
+        return $this->buildUblExtension();
+
         $signedProprietiesXml = $this->buildSignaturePart();
 
         // Fix the indentation from 2 to 4
@@ -69,6 +70,7 @@ class UblExtension
             'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
             'Id' => 'xadesSignedProperties'
         ]);
+
         $signedProperties = $xml->add('xades:SignedSignatureProperties');
 
         $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z',);
@@ -106,6 +108,8 @@ class UblExtension
      */
     private function buildUblExtension(): string
     {
+        $signedProprietiesXml = $this->buildSignaturePart();
+
         $xml = \Salla\ZATCA\Helpers\UXML::newInstance("ext:UBLExtension");
         $xml->add('ext:ExtensionURI', 'urn:oasis:names:specification:ubl:dsig:enveloped:xades');
         $content = $xml->add('ext:ExtensionContent');
@@ -173,7 +177,7 @@ class UblExtension
             'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
         ]);
 
-        $digestValue->add('ds:DigestValue', 'SET_SIGNED_PROPERTIES_HASH');
+        $digestValue->add('ds:DigestValue', base64_encode(hash('sha256', $signedProprietiesXml)));
 
         $signature->add('ds:SignatureValue', $this->digitalSignature);
 
@@ -181,11 +185,12 @@ class UblExtension
         $x509Data = $keyInfo->add('ds:X509Data');
         $x509Data->add('ds:X509Certificate', $this->certificate->getPlainCertificate());
 
-        $dsObject = $signature->add('ds:Object');
-        $dsObject->add('xades:QualifyingProperties', 'SET_SIGNED_PROPERTIES_XML', [
-            'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-            'Target' => "signature"
-        ]);
+        // todo :: add the object
+//        $dsObject = $signature->add('ds:Object');
+//        $dsObject->add('xades:QualifyingProperties', $signedProprietiesXml, [
+//            'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+//            'Target' => "signature"
+//        ]);
 
         // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
         $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
