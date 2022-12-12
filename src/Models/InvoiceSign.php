@@ -62,16 +62,17 @@ class InvoiceSign
             ->setDigitalSignature($digitalSignature)
             ->populateUblSignature();
 
+        // todo :: inject the xml nodes
         $signedInvoice = str_replace(
             [
-                'SET_UBL_EXTENSIONS_STRING',
+                "\n    <cbc:ProfileID>",
                 'SET_QR_CODE_DATA'
             ],
             [
-                $ublExtension,
+                $ublExtension . "    <cbc:ProfileID>",
                 $this->generateQRCode($invoiceHash, $digitalSignature)
             ],
-            $this->xmlInvoice);
+            $this->xmlDom->asXml());
 
         // todo :: create a new class called Invoice, hash, invoice
         return ['hash' => $invoiceHash, 'invoice' => $signedInvoice];
