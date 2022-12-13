@@ -73,9 +73,7 @@ class InvoiceSign
             ], $this->xmlDom->asXML());
 
         //after replace we want to remove any blank line
-        $signedInvoice = $str = preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice);
-
-        return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash,$QRCode,$this->certificate);
+        return new \Salla\ZATCA\Models\Invoice(preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice), $invoiceHash,$QRCode,$this->certificate);
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
