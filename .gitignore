@@ -1,5 +1,4 @@
 composer.phar
 composer.lock
 vendor/
-tests/*.xml
 .idea

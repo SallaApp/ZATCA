@@ -81,6 +81,7 @@ class InvoiceSign
         //...
         //</Invoice>
         //So, if $this->xmlInvoice not passed with this nodes then you need to reproduce this replace part by your qualified nodes
+        //see tests folder ,there is an example for xmlInvoice name it simplified_invoice.xml
 
         return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash);
     }
