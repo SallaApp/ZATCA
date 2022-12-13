@@ -64,4 +64,5 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
 
         // $this->assertStringContainsString($certificate->getCertificateSignature(),base64_decode($signInfo->getQRCode()));
     }
+
 }

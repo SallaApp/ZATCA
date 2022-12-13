@@ -32,6 +32,7 @@ class InvoiceSign
 
     public function sign(): Invoice
     {
+
         // we need to make sure the orignal xml have 4 indentation
         if (! str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
             $this->xmlInvoice = preg_replace('/^[ ]+(?=<)/m', '$0$0', $this->xmlInvoice);
@@ -46,7 +47,6 @@ class InvoiceSign
         $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
         $invoiceHashBinary = hash('sha256', $this->xmlDom->element()->C14N(false, false), true);
         $invoiceHash       = base64_encode($invoiceHashBinary);
-
         /**
          * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @see page 53
@@ -64,24 +64,16 @@ class InvoiceSign
         $QRCode =  $this->generateQRCode($invoiceHash, $digitalSignature);
         $signedInvoice = str_replace(
             [
-                "<ext:UBLExtensions/>",
-                '<cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">TEMP_QR_VALUE</cbc:EmbeddedDocumentBinaryObject>'
+                "<cbc:ProfileID>",
+                '<cac:AccountingSupplierParty>'
             ],
             [
-                "<ext:UBLExtensions>" . $ublExtension . "</ext:UBLExtensions>",
-                "<cbc:EmbeddedDocumentBinaryObject mimeCode=\"text/plain\">" . $QRCode . "</cbc:EmbeddedDocumentBinaryObject>"
-            ],
-            $this->xmlInvoice);
-        //We assume that the $this->xmlInvoice like this :
-        //<?xml version="1.0" encoding="UTF-8 ? >
-        //<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" ...>
-        //<ext:UBLExtensions/>
-        //...
-        //'<cbc:EmbeddedDocumentBinaryObject mimeCode="text/plain">TEMP_QR_VALUE</cbc:EmbeddedDocumentBinaryObject>
-        //...
-        //</Invoice>
-        //So, if $this->xmlInvoice not passed with this nodes then you need to reproduce this replace part by your qualified nodes
-        //see tests folder ,there is an example for xmlInvoice name it simplified_invoice.xml
+                "<ext:UBLExtensions>" . $ublExtension . "</ext:UBLExtensions>".PHP_EOL."    <cbc:ProfileID>",
+                $this->getQRNode($QRCode) .PHP_EOL. "    <cac:AccountingSupplierParty>"
+            ], $this->xmlDom->asXML());
+
+        //after replace we want to remove any blank line
+        $signedInvoice = $str = preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice);
 
         return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash,$QRCode,$this->certificate);
     }
@@ -109,5 +101,24 @@ class InvoiceSign
         }
 
         return GenerateQrCode::fromArray($qrArray)->toBase64();
+    }
+
+    /**
+     * Dont edit this string , will effect the signature of invoice
+     * @param string $QRCode
+     * @return string
+     */
+    private function getQRNode(string $QRCode):string
+    {
+        return "<cac:AdditionalDocumentReference>
+        <cbc:ID>QR</cbc:ID>
+        <cac:Attachment>
+            <cbc:EmbeddedDocumentBinaryObject mimeCode=\"text/plain\">$QRCode</cbc:EmbeddedDocumentBinaryObject>
+        </cac:Attachment>
+    </cac:AdditionalDocumentReference>
+    <cac:Signature>
+        <cbc:ID>urn:oasis:names:specification:ubl:signature:Invoice</cbc:ID>
+        <cbc:SignatureMethod>urn:oasis:names:specification:ubl:dsig:enveloped:xades</cbc:SignatureMethod>
+    </cac:Signature>";
     }
 }
