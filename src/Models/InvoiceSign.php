@@ -78,10 +78,8 @@ class InvoiceSign
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
     {
-        $isSimplified = $this->xmlDom->get("cbc:InvoiceTypeCode")->asText() === "388";
-
         $issueDate = trim($this->xmlDom->get("cbc:IssueDate")->asText());
-        $issueTime = trim($this->xmlDom->get("cbc:IssueTime")->asText());
+        $issueTime = trim($this->xmlDom->get("cbc:IssueTime"));
 
         $qrArray = [
             new Tag(1, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
@@ -94,6 +92,11 @@ class InvoiceSign
             new Tag(8, base64_decode($this->certificate->getPlainPublicKey()))
         ];
 
+        //InvoiceTypeCode maybe 0100000, 0200000 ,0110000, 0101000, 0210000, 0201000,...
+        /** @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39 */
+
+        $startOfInvoiceTypeCode = substr($this->xmlDom->get("cbc:InvoiceTypeCode")->element()->getAttribute('name'),0,2);
+        $isSimplified = $startOfInvoiceTypeCode && $startOfInvoiceTypeCode === "02";
         if ($isSimplified) {
             $qrArray = array_merge($qrArray, [new Tag(9, $this->certificate->getCertificateSignature())]);
         }

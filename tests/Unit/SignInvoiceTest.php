@@ -36,7 +36,7 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($x509->getCurrentCert()['signatureAlgorithm']['algorithm'], 'ecdsa-with-SHA256');
 
         $this->assertEquals($x509->getIssuerDNProp('CN')[0], 'TSZEINVOICE-SubCA-1');
-        //dd($x509->getDN(X509::DN_OPENSSL), $x509->getIssuerDN(X509::DN_OPENSSL));
+
         $this->assertTrue($x509->validateDate());
 
     }
