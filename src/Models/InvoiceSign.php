@@ -79,7 +79,7 @@ class InvoiceSign
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
     {
         $issueDate = trim($this->xmlDom->get("cbc:IssueDate")->asText());
-        $issueTime = trim($this->xmlDom->get("cbc:IssueTime"));
+        $issueTime = trim($this->xmlDom->get("cbc:IssueTime")->asText());
 
         $qrArray = [
             new Tag(1, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
