@@ -32,18 +32,7 @@ class UblExtension
     /**
      * @throws \DOMException
      */
-    public function populateUblSignature()
-    {
-        return preg_replace(
-            '/^[ ]+(?=<)/m',
-            '$0$0', $this->buildUblExtension());
-    }
-
-
-    /**
-     * @throws \DOMException
-     */
-    private function buildUblExtension(): string
+    public function populateUblSignature(): string
     {
         $signedProprietiesXml = $this->buildSignatureObject();
 
@@ -124,10 +113,16 @@ class UblExtension
         $dsObject = $signature->add('ds:Object');
         $this->buildSignatureObject($dsObject);
 
-        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
+        //We need to remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
         $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
-        $formatted = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"', "",$formatted);
-        return str_replace('<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">', '<ext:UBLExtension>', $formatted);
+
+        //During building ublExtension there is an extra props added to xml, We must remove it.
+        $formatted = str_replace([' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
+                                  '<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">'],
+            ["", '<ext:UBLExtension>'], $formatted);
+
+        //Finally we need to make sure the built xml have 4 indentation
+        return preg_replace('/^[ ]+(?=<)/m', '$0$0', $formatted);
     }
 
     private function buildSignatureObject($dsObject = null):? string
@@ -151,7 +146,7 @@ class UblExtension
             ])->add('xades:SignedSignatureProperties');
         }
 
-        $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z',);
+        $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z');
         $signingCertificate = $signedProperties->add('xades:SigningCertificate');
         $cert               = $signingCertificate->add('xades:Cert');
 
