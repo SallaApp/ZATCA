@@ -94,9 +94,8 @@ class InvoiceSign
 
         //InvoiceTypeCode maybe 0100000, 0200000 ,0110000, 0101000, 0210000, 0201000,...
         /** @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39 */
-
-        $startOfInvoiceTypeCode = substr($this->xmlDom->get("cbc:InvoiceTypeCode")->element()->getAttribute('name'),0,2);
-        $isSimplified = $startOfInvoiceTypeCode && $startOfInvoiceTypeCode === "02";
+        $startOfInvoiceTypeCode = $this->xmlDom->get("cbc:InvoiceTypeCode");
+        $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
         if ($isSimplified) {
             $qrArray = array_merge($qrArray, [new Tag(9, $this->certificate->getCertificateSignature())]);
         }
