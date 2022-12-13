@@ -80,14 +80,14 @@ class InvoiceSign
     {
         $isSimplified = $this->xmlDom->get("cbc:InvoiceTypeCode")->asText() === "388";
 
-        $issueDate = $this->xmlDom->get("cbc:IssueDate")->asText();
-        $issueTime = $this->xmlDom->get("cbc:IssueTime")->asText();
+        $issueDate = trim($this->xmlDom->get("cbc:IssueDate")->asText());
+        $issueTime = trim($this->xmlDom->get("cbc:IssueTime")->asText());
 
         $qrArray = [
-            new Tag(1, $this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText()),
-            new Tag(2, $this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()),
+            new Tag(1, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
+            new Tag(2, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
             new Tag(3, $issueDate . 'T' . $issueTime . 'Z'),
-            new Tag(4, $this->xmlDom->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()),
+            new Tag(4, trim($this->xmlDom->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
             new Tag(5, trim($this->xmlDom->get("cac:TaxTotal")->asText())),
             new Tag(6, $invoiceHash),
             new Tag(7, $digitalSignature),
