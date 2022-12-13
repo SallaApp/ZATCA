@@ -49,9 +49,19 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         $this->assertIsString($xmlInvoice);
 
         $signInfo = (new InvoiceSign($xmlInvoice, new Certificate(self::certificate, self::privateKey)))->sign();
-        $this->assertStringContainsString($signInfo['hash'],$signInfo['invoice']);
-//        $xmlDoc = UXML::fromString($signInfo['invoice']);
-     //   $this->assertIsString();
 
+        //ensure that the hash writed to invoice
+        $this->assertStringContainsString($signInfo->getHash(), $signInfo->getInvoice());
+
+        //ensure that the QR writed to invoice
+        $this->assertStringContainsString($signInfo->getQRCode(), $signInfo->getInvoice());
+
+        //ensure that the Certificate writed to the invoice
+        $certificate = $signInfo->getCertificate();
+        $this->assertStringContainsString($certificate->getPlainCertificate(), $signInfo->getInvoice());
+        $this->assertStringContainsString($certificate->getHash(), $signInfo->getInvoice());
+
+
+        // $this->assertStringContainsString($certificate->getCertificateSignature(),base64_decode($signInfo->getQRCode()));
     }
 }

@@ -61,7 +61,7 @@ class InvoiceSign
             ->setDigitalSignature($digitalSignature)
             ->populateUblSignature();
 
-
+        $QRCode =  $this->generateQRCode($invoiceHash, $digitalSignature);
         $signedInvoice = str_replace(
             [
                 "<ext:UBLExtensions/>",
@@ -69,7 +69,7 @@ class InvoiceSign
             ],
             [
                 "<ext:UBLExtensions>" . $ublExtension . "</ext:UBLExtensions>",
-                "<cbc:EmbeddedDocumentBinaryObject mimeCode=\"text/plain\">" . $this->generateQRCode($invoiceHash, $digitalSignature) . "</cbc:EmbeddedDocumentBinaryObject>"
+                "<cbc:EmbeddedDocumentBinaryObject mimeCode=\"text/plain\">" . $QRCode . "</cbc:EmbeddedDocumentBinaryObject>"
             ],
             $this->xmlInvoice);
         //We assume that the $this->xmlInvoice like this :
@@ -83,7 +83,7 @@ class InvoiceSign
         //So, if $this->xmlInvoice not passed with this nodes then you need to reproduce this replace part by your qualified nodes
         //see tests folder ,there is an example for xmlInvoice name it simplified_invoice.xml
 
-        return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash);
+        return new \Salla\ZATCA\Models\Invoice($signedInvoice, $invoiceHash,$QRCode,$this->certificate);
     }
 
     private function generateQRCode(string $invoiceHash, string $digitalSignature): string
