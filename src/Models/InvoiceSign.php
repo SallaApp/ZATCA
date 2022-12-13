@@ -33,7 +33,7 @@ class InvoiceSign
     public function sign(): Invoice
     {
 
-        // we need to make sure the orignal xml have 4 indentation
+        // we need to make sure the original xml have 4 indentation in it's lines
         if (! str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
             $this->xmlInvoice = preg_replace('/^[ ]+(?=<)/m', '$0$0', $this->xmlInvoice);
         }
@@ -72,7 +72,7 @@ class InvoiceSign
                 $this->getQRNode($QRCode) .PHP_EOL. "    <cac:AccountingSupplierParty>"
             ], $this->xmlDom->asXML());
 
-        //after replace we want to remove any blank line
+        //after replace we want to remove any blank line from invoice.
         return new \Salla\ZATCA\Models\Invoice(preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice), $invoiceHash,$QRCode,$this->certificate);
     }
 
