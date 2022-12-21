@@ -24,59 +24,75 @@ class InvoiceSign
     /** @var \UXML\UXML */
     protected $xmlDom;
 
+    protected $digitalSignature;
+
+    protected $invoiceHash;
+
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
         $this->certificate = $certificate;
-        $this->xmlInvoice  = $xmlInvoice;
+        $this->xmlInvoice = $xmlInvoice;
     }
 
     public function sign(): Invoice
     {
-
         // we need to make sure the original xml have 4 indentation in it's lines
-        if (! str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
+        if (!str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
             $this->xmlInvoice = preg_replace('/^[ ]+(?=<)/m', '$0$0', $this->xmlInvoice);
         }
 
-        /** @see  https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf page 52 */
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
-        // remove unwanted tags
+        /**
+         * remove unwanted tags
+         *
+         * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
+         * @link page 53
+         */
         $this->xmlDom->removeByXpath('ext:UBLExtensions');
         $this->xmlDom->removeByXpath('cac:Signature');
         $this->xmlDom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+
         $invoiceHashBinary = hash('sha256', $this->xmlDom->element()->C14N(false, false), true);
-        $invoiceHash       = base64_encode($invoiceHashBinary);
+
+        $this->invoiceHash = base64_encode($invoiceHashBinary);
+
         /**
-         * @see https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
-         * @see page 53
+         * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
+         * @link page 53
          */
-        $digitalSignature = base64_encode(
+        $this->digitalSignature = base64_encode(
             $this->certificate->getPrivateKey()->sign($invoiceHashBinary)
         );
 
         $ublExtension = (new UblExtension)
             ->setCertificate($this->certificate)
-            ->setInvoiceHash($invoiceHash)
-            ->setDigitalSignature($digitalSignature)
+            ->setInvoiceHash($this->invoiceHash)
+            ->setDigitalSignature($this->digitalSignature)
             ->populateUblSignature();
 
-        $QRCode =  $this->generateQRCode($invoiceHash, $digitalSignature);
+        $QRCode = $this->generateQRCode();
+
         $signedInvoice = str_replace(
             [
                 "<cbc:ProfileID>",
                 '<cac:AccountingSupplierParty>'
             ],
             [
-                "<ext:UBLExtensions>" . $ublExtension . "</ext:UBLExtensions>".PHP_EOL."    <cbc:ProfileID>",
-                $this->getQRNode($QRCode) .PHP_EOL. "    <cac:AccountingSupplierParty>"
+                "<ext:UBLExtensions>" . $ublExtension . "</ext:UBLExtensions>" . PHP_EOL . "    <cbc:ProfileID>",
+                $this->getQRNode($QRCode) . PHP_EOL . "    <cac:AccountingSupplierParty>"
             ], $this->xmlDom->asXML());
 
-        //after replace we want to remove any blank line from invoice.
-        return new \Salla\ZATCA\Models\Invoice(preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice), $invoiceHash,$QRCode,$this->certificate);
+        // after replace we want to remove any blank line from invoice.
+        return new \Salla\ZATCA\Models\Invoice(
+            preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice),
+            $this->invoiceHash,
+            $QRCode,
+            $this->certificate
+        );
     }
 
-    private function generateQRCode(string $invoiceHash, string $digitalSignature): string
+    private function generateQRCode(): string
     {
         $issueDate = trim($this->xmlDom->get("cbc:IssueDate")->asText());
         $issueTime = trim($this->xmlDom->get("cbc:IssueTime")->asText());
@@ -87,15 +103,22 @@ class InvoiceSign
             new Tag(3, $issueDate . 'T' . $issueTime . 'Z'),
             new Tag(4, trim($this->xmlDom->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
             new Tag(5, trim($this->xmlDom->get("cac:TaxTotal")->asText())),
-            new Tag(6, $invoiceHash),
-            new Tag(7, $digitalSignature),
+            new Tag(6, $this->invoiceHash),
+            new Tag(7, $this->digitalSignature),
             new Tag(8, base64_decode($this->certificate->getPlainPublicKey()))
         ];
 
-        //InvoiceTypeCode maybe 0100000, 0200000 ,0110000, 0101000, 0210000, 0201000,...
-        /** @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39 */
+        /**
+         * NOTE on UN/EDIFACT code list 1001 compliance:
+         * For Simplified Tax Invoice, code is 388 and subtype is 02. ex. <cbc:InvoiceTypeCode name=”020000”>388</cbc:InvoiceTypeCode>
+         * For simplified debit note, code is 383 and subtype is 02. ex. <cbc:InvoiceTypeCode name=”020000”>383</cbc:InvoiceTypeCode>
+         * For simplified credit note, code is 381 and subtype is 02. ex. <cbc:InvoiceTypeCode name=”020000”>381</cbc:InvoiceTypeCode>
+         *
+         * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39
+         */
         $startOfInvoiceTypeCode = $this->xmlDom->get("cbc:InvoiceTypeCode");
         $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
+
         if ($isSimplified) {
             $qrArray = array_merge($qrArray, [new Tag(9, $this->certificate->getCertificateSignature())]);
         }
@@ -108,7 +131,7 @@ class InvoiceSign
      * @param string $QRCode
      * @return string
      */
-    private function getQRNode(string $QRCode):string
+    private function getQRNode(string $QRCode): string
     {
         return "<cac:AdditionalDocumentReference>
         <cbc:ID>QR</cbc:ID>
