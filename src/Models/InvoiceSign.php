@@ -123,7 +123,7 @@ class InvoiceSign
             $qrArray = array_merge($qrArray, [new Tag(9, $this->certificate->getCertificateSignature())]);
         }
 
-        return GenerateQrCode::fromArray($qrArray)->render();
+        return GenerateQrCode::fromArray($qrArray)->toBase64();
     }
 
     /**
