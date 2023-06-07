@@ -35,7 +35,7 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
                     ->setOrganizationalUnitName($organizationalUnitName)
                     ->setRegisteredAddress('3355  - حي الملك فهد مكة المكرمة 24347 - 7192')
                     ->setInvoiceType(true, true)
-                    ->setIsSandBoxEnv(true)
+                    ->setCurrentZatcaEnv('sand_box')
                     ->setBusinessCategory('company')
             )->initialize()
                 ->generate();

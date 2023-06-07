@@ -77,6 +77,14 @@ class CSRRequest
     protected $businessCategory = 'company';
 
 
+    /**
+     * the current Active environment in zatca
+     *
+     * @var string
+     */
+    protected $currentEnv = 'sand_box';  // will support three types (sandbox, simulation, production)
+
+
     public function setCommonName(string $commonName): self
     {
         $this->commonName = $commonName;
@@ -157,11 +165,13 @@ class CSRRequest
         return $this;
     }
 
-    public function setIsSandBoxEnv(bool $value = true): self
+    public function setCurrentZatcaEnv(string $currentEnv): CSRRequest
     {
-        $this->is_sandbox_env = $value;
+        $this->currentEnv = $currentEnv;
+
         return $this;
     }
+
 
     public function toArray(): array
     {
@@ -184,7 +194,12 @@ class CSRRequest
 
     public function isSandboxEnv(): bool
     {
-        return$this->is_sandbox_env;
+        return$this->currentEnv === 'sand_box';
+    }
+
+    public function isSimulationEnv(): bool
+    {
+        return$this->currentEnv === 'simulation';
     }
 
     public function getSerialNumber(): string

@@ -66,9 +66,10 @@ EOL;
         //replace the "1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing" if it is sandbox
         if($this->CSRRequest->isSandboxEnv()){
             str_replace( 'TSTZATCA-Code-Signing', 'ZATCA-Code-Signing',$this->tempConf);
+        }else if($this->CSRRequest->isSimulationEnv()){
+            str_replace( 'TSTZATCA-Code-Signing', 'PREZATCA-Code-Signing',$this->tempConf);
         }
 
-        //todo :: throw exceptions if is failed
         file_put_contents($this->opensslConfig['config'], $this->tempConf . "\n" . $subject . "\n");
 
         return $this;
