@@ -82,7 +82,7 @@ class CSRRequest
      *
      * @var string
      */
-    protected $currentEnv = 'sand_box';  // will support three types (sandbox, simulation, production)
+    protected $currentEnv = 'sandbox';  // will support three types (sandbox, simulation, production)
 
 
     public function setCommonName(string $commonName): self
@@ -194,7 +194,7 @@ class CSRRequest
 
     public function isSandboxEnv(): bool
     {
-        return$this->currentEnv === 'sand_box';
+        return$this->currentEnv === 'sandbox';
     }
 
     public function isSimulationEnv(): bool
