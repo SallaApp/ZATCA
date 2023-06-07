@@ -56,7 +56,7 @@ EOL;
     public function initialize(): self
     {
         $this->opensslConfig['config'] = tempnam(sys_get_temp_dir(), "zakact_openssl_config_");
-       
+
         // prepare openssl config file.
         $subject = implode("\n", array_map(function ($name, $value) {
             return "{$name} = {$value}";
@@ -67,7 +67,7 @@ EOL;
         if($this->CSRRequest->isSandboxEnv()){
             str_replace( 'TSTZATCA-Code-Signing', 'ZATCA-Code-Signing',$this->tempConf);
         }else if($this->CSRRequest->isSimulationEnv()){
-            str_replace( 'TSTZATCA-Code-Signing', 'PREZATCA-Code-Signing',$this->tempConf);
+            str_replace( 'ASN1:UTF8String:TSTZATCA-Code-Signing', 'ASN1:PRINTABLESTRING:PREZATCA-Code-Signing',$this->tempConf);
         }
 
         file_put_contents($this->opensslConfig['config'], $this->tempConf . "\n" . $subject . "\n");
