@@ -7,6 +7,8 @@ use Salla\ZATCA\Exception\CSRValidationException;
 
 class CSRRequest
 {
+    const SANDBOX = 'sandbox';
+    const SIMULATION ='simulation';
     /**
      * EGS Serial number (1-SolutionName|2-ModelOrVersion|3-serialNumber)
      *
@@ -194,12 +196,12 @@ class CSRRequest
 
     public function isSandboxEnv(): bool
     {
-        return$this->currentEnv === 'sandbox';
+        return$this->currentEnv === self::SANDBOX;
     }
 
     public function isSimulationEnv(): bool
     {
-        return$this->currentEnv === 'simulation';
+        return$this->currentEnv === self::SIMULATION;
     }
 
     public function getSerialNumber(): string
