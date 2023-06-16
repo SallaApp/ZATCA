@@ -85,10 +85,10 @@ class CSRRequest
 
     /**
      * the current Active environment in zatca
-     *
+     *  will support three types (sandbox, simulation, production)
      * @var string
      */
-    protected $currentEnv = 'sandbox';  // will support three types (sandbox, simulation, production)
+    protected $currentEnv = 'sandbox';
 
 
     public function setCommonName(string $commonName): self
