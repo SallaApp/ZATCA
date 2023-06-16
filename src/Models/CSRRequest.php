@@ -7,8 +7,12 @@ use Salla\ZATCA\Exception\CSRValidationException;
 
 class CSRRequest
 {
-    const SANDBOX = 'sandbox';
-    const SIMULATION ='simulation';
+    const SANDBOX    = 'sandbox';
+
+    const SIMULATION = 'simulation';
+
+    const PRODUCTION = 'production';
+
     /**
      * EGS Serial number (1-SolutionName|2-ModelOrVersion|3-serialNumber)
      *
@@ -174,6 +178,20 @@ class CSRRequest
         return $this;
     }
 
+    public function isSandboxEnv(): bool
+    {
+        return $this->currentEnv === self::SANDBOX;
+    }
+
+    public function isSimulationEnv(): bool
+    {
+        return $this->currentEnv === self::SIMULATION;
+    }
+
+    public function isProduction(): bool
+    {
+        return $this->currentEnv === self::PRODUCTION;
+    }
 
     public function toArray(): array
     {
@@ -192,16 +210,6 @@ class CSRRequest
                 "businessCategory"     => $this->getBusinessCategory()
             ]
         ];
-    }
-
-    public function isSandboxEnv(): bool
-    {
-        return$this->currentEnv === self::SANDBOX;
-    }
-
-    public function isSimulationEnv(): bool
-    {
-        return$this->currentEnv === self::SIMULATION;
     }
 
     public function getSerialNumber(): string
