@@ -85,7 +85,7 @@ class CSRRequest
 
     /**
      * the current Active environment in zatca
-     *  will support three types (sandbox, simulation, production)
+     * will support three modes (sandbox, simulation, production)
      * @var string
      */
     protected $currentEnv = 'sandbox';
