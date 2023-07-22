@@ -15,4 +15,6 @@ return [
     'generated_at' => 'Generated At',
     'receipt_date' => 'Receipt Date',
     'receipt_type' => 'Receipt Type',
+    'discount' => 'Discount',
+
 ];
