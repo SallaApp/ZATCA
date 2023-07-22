@@ -114,6 +114,37 @@ https://www.onlinebarcodereader.com/
 
 ![image](https://user-images.githubusercontent.com/10876587/142364186-f7d5b523-07fc-4776-8b96-9a75f4a455d1.png)
 
+## Translations
+
+The salla/zatca package comes with [translations](https://github.com/SallaApp/ZATCA/tree/master/src/resources/lang) for Arabic, English languages. The translations are organized into separate files for each section of the application, as following company, customer, items, general, order. Each file contains an array of key-value pairs for the translated strings.
+And like so, You can see all [available translations](https://github.com/SallaApp/ZATCA/tree/master/src/resources/lang)
+
+you can use them with "zatca" name space
+
+#### Example using translations:
+for the 'name' key in the 'company' array, you can use the following code:
+
+```
+trans('zatca::company.name')
+```
+
+Similarly, to retrieve the translated string for the 'address' key in the 'customer' array, you can use the following code:
+
+```
+trans('zatca::customer.address') 
+```
+
+Or in blade files like:
+
+```
+@lang('zatca::customer.address') 
+```
+OR
+```
+{{ __('zatca::customer.address')  }}
+```
+
+And like so, You can see all [available translations](https://github.com/SallaApp/ZATCA/tree/master/src/resources/lang)
 
 ## TODO
 
