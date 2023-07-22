@@ -16,7 +16,7 @@ class ZaTCAServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'zatca');
 
         $this->publishes([
-            __DIR__.'/../resources/lang' => resource_path('lang/vendor/zatca'),
+            __DIR__.'/../resources/lang' => lang_path('lang/vendor/zatca'),
         ], 'translations');
     }
 
