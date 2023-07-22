@@ -15,4 +15,6 @@ return [
     'generated_at' => 'تم التوليد في',
     'receipt_date' => 'تاريخ الإيصال',
     'receipt_type' => 'نوع الإيصال',
+    'discount' => ' الخصم',
+
 ];
