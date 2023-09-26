@@ -65,10 +65,7 @@ EOL;
 
         //replace the "1.3.6.1.4.1.311.20.2 = ASN1:UTF8String:ZATCA-Code-Signing"  with target env signing letter
         //@see https://zatca.gov.sa/en/E-Invoicing/Introduction/Guidelines/Documents/Fatoora_Portal_User_Manual_English.pdf page 30
-        if ($this->CSRRequest->isSandboxEnv()) {
-            $this->tempConf =  str_replace('TSTZATCA-Code-Signing', 'ZATCA-Code-Signing', $this->tempConf);
-        }
-        else if ($this->CSRRequest->isSimulationEnv()) {
+      if ($this->CSRRequest->isSimulationEnv()) {
             $this->tempConf =  str_replace('ASN1:UTF8String:TSTZATCA-Code-Signing', 'ASN1:PRINTABLESTRING:PREZATCA-Code-Signing', $this->tempConf);
         }
         else if ($this->CSRRequest->isProduction()) {
