@@ -20,10 +20,6 @@ class CSRRequest
      */
     protected $serial_number;
 
-
-    protected $is_sandbox_env = true;
-
-
     /**
      *  Invoice type (TSCZ)(1 = supported, 0 not supported) (Tax, Simplified, future use, future use)
      *
