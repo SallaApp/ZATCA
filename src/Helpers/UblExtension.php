@@ -146,7 +146,7 @@ class UblExtension
             ])->add('xades:SignedSignatureProperties');
         }
 
-        $signedProperties->add('xades:SigningTime', now()->format('Y-m-d') . 'T' . now()->format('H:m:s') . 'Z');
+        $signedProperties->add('xades:SigningTime', date('Y-m-d') . 'T' . date('H:m:s') . 'Z');
         $signingCertificate = $signedProperties->add('xades:SigningCertificate');
         $cert               = $signingCertificate->add('xades:Cert');
 
