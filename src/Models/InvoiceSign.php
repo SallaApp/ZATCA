@@ -96,7 +96,7 @@ class InvoiceSign
     {
         $issueDate = trim($this->xmlDom->get("cbc:IssueDate")->asText());
         $issueTime = trim($this->xmlDom->get("cbc:IssueTime")->asText());
-        $issueTime = stripos($issueTime, 'Z') === 0 ? $issueTime .'Z' : $issueTime;
+        $issueTime = stripos($issueTime, 'Z') === false ? $issueTime .'Z' : $issueTime;
 
         $qrArray = [
             new Tag(1, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
