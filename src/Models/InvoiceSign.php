@@ -100,7 +100,7 @@ class InvoiceSign
         $qrArray = [
             new Tag(1, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
             new Tag(2, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
-            new Tag(3, $issueDate . 'T' . $issueTime . 'Z'),
+            new Tag(3, $issueDate . 'T' . $issueTime ),
             new Tag(4, trim($this->xmlDom->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
             new Tag(5, trim($this->xmlDom->get("cac:TaxTotal")->asText())),
             new Tag(6, $this->invoiceHash),
