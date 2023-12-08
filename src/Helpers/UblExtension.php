@@ -34,7 +34,9 @@ class UblExtension
      */
     public function populateUblSignature(): string
     {
-        $signedProprietiesXml = $this->buildSignatureObject();
+        $signingTime = date('Y-m-d') . 'T' . date('H:m:s') ; //'2023-12-08T01:02:01';
+
+        $signedProprietiesXml = $this->buildSignatureObject(null,$signingTime);
 
         $xml = \Salla\ZATCA\Helpers\UXML::newInstance("ext:UBLExtension");
         $xml->add('ext:ExtensionURI', 'urn:oasis:names:specification:ubl:dsig:enveloped:xades');
@@ -111,7 +113,7 @@ class UblExtension
         $x509Data = $keyInfo->add('ds:X509Data');
         $x509Data->add('ds:X509Certificate', $this->certificate->getPlainCertificate());
         $dsObject = $signature->add('ds:Object');
-        $this->buildSignatureObject($dsObject);
+        $this->buildSignatureObject($dsObject,$signingTime);
 
         //We need to remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
         $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
@@ -125,9 +127,9 @@ class UblExtension
         return preg_replace('/^[ ]+(?=<)/m', '$0$0', $formatted);
     }
 
-    private function buildSignatureObject($dsObject = null):? string
+    private function buildSignatureObject($dsObject = null, $signingTime):? string
     {
-        $xml = null;
+
         if ($dsObject) {
             $xml = $dsObject->add('xades:QualifyingProperties', null, [
                 'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
@@ -138,16 +140,19 @@ class UblExtension
                 'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
                 'Id'          => 'xadesSignedProperties'
             ])->add('xades:SignedSignatureProperties');
+
+            $signedProperties->add('xades:SigningTime', $signingTime);
+            $signingCertificate = $signedProperties->add('xades:SigningCertificate');
         }
         else {
-            $signedProperties = $xml= \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
-                'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+            $signedProperties  =  $xml = \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
                 'Id'          => 'xadesSignedProperties'
-            ])->add('xades:SignedSignatureProperties');
+            ]);
+            $signedSignatureProperties =   $xml->add('xades:SignedSignatureProperties');
+            $signedSignatureProperties->add('xades:SigningTime', $signingTime);
+            $signingCertificate=  $signedSignatureProperties->add('xades:SigningCertificate');
         }
 
-        $signedProperties->add('xades:SigningTime', date('Y-m-d') . 'T' . date('H:m:s') . 'Z');
-        $signingCertificate = $signedProperties->add('xades:SigningCertificate');
         $cert               = $signingCertificate->add('xades:Cert');
 
         $certDigest = $cert->add('xades:CertDigest');
@@ -156,12 +161,13 @@ class UblExtension
             'xmlns:ds'  => "http://www.w3.org/2000/09/xmldsig#",
             'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
         ];
-        if($dsObject){
+
+        if($dsObject !== null){
            unset($arrDigest['xmlns:ds']);
         }
         $certDigest->add('ds:DigestMethod', null,$arrDigest );
         $certDigest->add('ds:DigestValue', $this->certificate->getHash(),
-           $dsObject ? [] : ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
+           $dsObject  ? [] :['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
 
         $issuerSerial = $cert->add('xades:IssuerSerial');
         $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING),
@@ -169,11 +175,18 @@ class UblExtension
         $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString(),
             $dsObject ? [] :  ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
 
-        if ($dsObject) {
+        if ($dsObject !== null) {
             return null;
         }
 
-        $signPart = str_replace(' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"', "", $signedProperties->asXML());
+        $signPart = str_replace(
+            [
+                'xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
+                'xades:SignedProperties xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="xadesSignedProperties'
+            ], [
+                "",
+                'xades:SignedProperties Id="xadesSignedProperties'
+            ], $signedProperties->asXML());
         // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
         return preg_replace('!^[^>]+>(\r\n|\n)!', '', $signPart);
     }
