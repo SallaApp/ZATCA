@@ -13,10 +13,7 @@ class UblExtension
     const SAC = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureAggregateComponents-2';
     const SBC = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2';
     const SIG = 'urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2';
-    const NS_INVOICE = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
-    const NS_CAC = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
-    const NS_CBC = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
-    const EXT = 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2';
+
 
     /**
      * @var Certificate $certificate
@@ -123,9 +120,9 @@ class UblExtension
         $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
 
         //During building ublExtension there is an extra props added to xml, We must remove it.
-        $formatted = str_replace([
-            ' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'],
-            [""], $formatted);
+        $formatted = str_replace([' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
+            '<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">'],
+            ["", '<ext:UBLExtension>'], $formatted);
 
         //Finally we need to make sure the built xml have 4 indentation
         return preg_replace('/^[ ]+(?=<)/m', '$0$0', $formatted);
