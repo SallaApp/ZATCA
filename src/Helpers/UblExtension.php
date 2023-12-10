@@ -11,8 +11,12 @@ use phpseclib3\File\X509;
 class UblExtension
 {
     const SAC = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureAggregateComponents-2';
-    const SBS = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2';
+    const SBC = 'urn:oasis:names:specification:ubl:schema:xsd:SignatureBasicComponents-2';
     const SIG = 'urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2';
+    const NS_INVOICE = "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2";
+    const NS_CAC = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
+    const NS_CBC = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
+    const EXT = 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2';
 
     /**
      * @var Certificate $certificate
@@ -34,9 +38,9 @@ class UblExtension
      */
     public function populateUblSignature(): string
     {
-        $signingTime = date('Y-m-d') . 'T' . date('H:m:s') ; //'2023-12-08T01:02:01';
+        $signingTime = date('Y-m-d') . 'T' . date('H:m:s'); //'2023-12-08T01:02:01';
 
-        $signedProprietiesXml = $this->buildSignatureObject(null,$signingTime);
+        $signedProprietiesXml = $this->buildSignedProperties($signingTime);
 
         $xml = \Salla\ZATCA\Helpers\UXML::newInstance("ext:UBLExtension");
         $xml->add('ext:ExtensionURI', 'urn:oasis:names:specification:ubl:dsig:enveloped:xades');
@@ -44,7 +48,7 @@ class UblExtension
         $singInformation = $content->add('sig:UBLDocumentSignatures', null, [
             'xmlns:sig' => self::SIG,
             'xmlns:sac' => self::SAC,
-            'xmlns:sbc' => self::SBS]);
+            'xmlns:sbc' => self::SBC]);
 
 
         $contentSignature = $singInformation->add('sac:SignatureInformation');
@@ -53,7 +57,7 @@ class UblExtension
 
         $signature = $contentSignature->add('ds:Signature', null, [
             'xmlns:ds' => 'http://www.w3.org/2000/09/xmldsig#',
-            'Id' => 'signature'
+            'Id'       => 'signature'
         ]);
 
         $signInfo = $signature->add('ds:SignedInfo');
@@ -65,7 +69,7 @@ class UblExtension
         ]);
 
         $reference = $signInfo->add('ds:Reference', null, [
-            'Id' => 'invoiceSignedData',
+            'Id'  => 'invoiceSignedData',
             'URI' => ''
         ]);
 
@@ -98,7 +102,7 @@ class UblExtension
 
         $digestValue = $signInfo->add('ds:Reference', null, [
             'Type' => "http://www.w3.org/2000/09/xmldsig#SignatureProperties",
-            'URI' => "#xadesSignedProperties"
+            'URI'  => "#xadesSignedProperties"
         ]);
 
         $digestValue->add('ds:DigestMethod', null, [
@@ -113,83 +117,88 @@ class UblExtension
         $x509Data = $keyInfo->add('ds:X509Data');
         $x509Data->add('ds:X509Certificate', $this->certificate->getPlainCertificate());
         $dsObject = $signature->add('ds:Object');
-        $this->buildSignatureObject($dsObject,$signingTime);
+        $this->buildSignatureObject($dsObject, $signingTime);
 
         //We need to remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
         $formatted = preg_replace('!^[^>]+>(\r\n|\n)!', '', $xml->asXML());
 
         //During building ublExtension there is an extra props added to xml, We must remove it.
-        $formatted = str_replace([' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
-                                  '<ext:UBLExtension xmlns:sig="urn:oasis:names:specification:ubl:schema:xsd:CommonSignatureComponents-2" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xades="http://uri.etsi.org/01903/v1.3.2#">'],
-            ["", '<ext:UBLExtension>'], $formatted);
+        $formatted = str_replace([
+            ' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
+            ]
+            [""], $formatted);
 
         //Finally we need to make sure the built xml have 4 indentation
         return preg_replace('/^[ ]+(?=<)/m', '$0$0', $formatted);
     }
 
-    private function buildSignatureObject($dsObject = null, $signingTime):? string
+    private function buildSignatureObject($dsObject, $signingTime)
     {
+        $xml = $dsObject->add('xades:QualifyingProperties', null, [
+            'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+            'Target'      => "signature"
+        ]);
 
-        if ($dsObject) {
-            $xml = $dsObject->add('xades:QualifyingProperties', null, [
-                'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-                'Target'      => "signature"
-            ]);
+        $signedProperties = $xml->add("xades:SignedProperties", null, [
+            'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
+            'Id'          => 'xadesSignedProperties'
+        ])->add('xades:SignedSignatureProperties');
 
-            $signedProperties =  $xml->add("xades:SignedProperties", null, [
-                'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
-                'Id'          => 'xadesSignedProperties'
-            ])->add('xades:SignedSignatureProperties');
+        $signedProperties->add('xades:SigningTime', $signingTime);
+        $signingCertificate = $signedProperties->add('xades:SigningCertificate');
 
-            $signedProperties->add('xades:SigningTime', $signingTime);
-            $signingCertificate = $signedProperties->add('xades:SigningCertificate');
-        }
-        else {
-            $signedProperties  =  $xml = \Salla\ZATCA\Helpers\UXML::newInstance("xades:SignedProperties", null, [
-                'Id'          => 'xadesSignedProperties'
-            ]);
-            $signedSignatureProperties =   $xml->add('xades:SignedSignatureProperties');
-            $signedSignatureProperties->add('xades:SigningTime', $signingTime);
-            $signingCertificate=  $signedSignatureProperties->add('xades:SigningCertificate');
-        }
-
-        $cert               = $signingCertificate->add('xades:Cert');
+        $cert = $signingCertificate->add('xades:Cert');
 
         $certDigest = $cert->add('xades:CertDigest');
-
-        $arrDigest = [
-            'xmlns:ds'  => "http://www.w3.org/2000/09/xmldsig#",
-            'Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"
-        ];
-
-        if($dsObject !== null){
-           unset($arrDigest['xmlns:ds']);
-        }
-        $certDigest->add('ds:DigestMethod', null,$arrDigest );
-        $certDigest->add('ds:DigestValue', $this->certificate->getHash(),
-           $dsObject  ? [] :['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
+        $certDigest->add('ds:DigestMethod', null, ['Algorithm' => "http://www.w3.org/2001/04/xmlenc#sha256"]);
+        $certDigest->add('ds:DigestValue', $this->certificate->getHash());
 
         $issuerSerial = $cert->add('xades:IssuerSerial');
-        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING),
-            $dsObject ? [] :  ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
-        $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString(),
-            $dsObject ? [] :  ['xmlns:ds' => "http://www.w3.org/2000/09/xmldsig#"]);
 
-        if ($dsObject !== null) {
-            return null;
-        }
-
-        $signPart = str_replace(
-            [
-                'xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
-                'xades:SignedProperties xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="xadesSignedProperties'
-            ], [
-                "",
-                'xades:SignedProperties Id="xadesSignedProperties'
-            ], $signedProperties->asXML());
-        // remove the first line "<?xml version="1.0" encoding="UTF-8\" and return the string as pure
-        return preg_replace('!^[^>]+>(\r\n|\n)!', '', $signPart);
+        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getIssuerDN(X509::DN_STRING));
+        $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString());
     }
+
+    /**
+     * Build qualified SignedProperties string like zatca SDK does, Don't change any space.
+     * @param $signingTime
+     * @return string
+     */
+    private function buildSignedProperties($signingTime): string
+    {
+        $signaturePart = '<xades:SignedProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="xadesSignedProperties">' . PHP_EOL .
+'                                    <xades:SignedSignatureProperties>' . PHP_EOL .
+'                                        <xades:SigningTime>SIGNING_TIME_VALUE</xades:SigningTime>' . PHP_EOL .
+'                                        <xades:SigningCertificate>' . PHP_EOL .
+'                                            <xades:Cert>' . PHP_EOL .
+'                                                <xades:CertDigest>' . PHP_EOL .
+'                                                    <ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>' . PHP_EOL .
+'                                                    <ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">HASH_DIGEST_VALUE</ds:DigestValue>' . PHP_EOL .
+'                                                </xades:CertDigest>' . PHP_EOL .
+'                                                <xades:IssuerSerial>' . PHP_EOL .
+'                                                    <ds:X509IssuerName xmlns:ds="http://www.w3.org/2000/09/xmldsig#">ISSUER_NAME</ds:X509IssuerName>' . PHP_EOL .
+'                                                    <ds:X509SerialNumber xmlns:ds="http://www.w3.org/2000/09/xmldsig#">SERIAL_NUMBER</ds:X509SerialNumber>' . PHP_EOL .
+'                                                </xades:IssuerSerial>' . PHP_EOL .
+'                                            </xades:Cert>' . PHP_EOL .
+'                                        </xades:SigningCertificate>' . PHP_EOL .
+'                                    </xades:SignedSignatureProperties>' . PHP_EOL .
+'                                </xades:SignedProperties>';
+
+       return str_replace([
+            'SIGNING_TIME_VALUE',
+            'HASH_DIGEST_VALUE',
+            'ISSUER_NAME',
+            'SERIAL_NUMBER',
+
+        ],[
+           $signingTime,
+            $this->certificate->getHash(),
+            $this->certificate->getIssuerDN(X509::DN_STRING),
+            $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString()
+
+        ],$signaturePart);
+    }
+
 
 
     public function setDigitalSignature(string $digitalSignature): UblExtension
