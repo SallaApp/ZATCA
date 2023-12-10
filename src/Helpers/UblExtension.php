@@ -124,8 +124,7 @@ class UblExtension
 
         //During building ublExtension there is an extra props added to xml, We must remove it.
         $formatted = str_replace([
-            ' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"',
-            ]
+            ' xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" xmlns:ds="http://www.w3.org/2000/09/xmldsig#"'],
             [""], $formatted);
 
         //Finally we need to make sure the built xml have 4 indentation
