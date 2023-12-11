@@ -156,8 +156,8 @@ class UblExtension
     }
 
     /**
-     * Build qualified SignedProperties string like zatca SDK does, Don't change,
-     * Any space decrease or increase will cause wrong xadesSignedPropertiesDigestValue.
+     * Build qualified SignedProperties string like zatca SDK does, Don't change it.
+     * Any space decreasing|increasing will cause wrong "error xadesSignedPropertiesDigestValue".
      * @param $signingTime
      * @return string
      */
