@@ -35,7 +35,7 @@ class UblExtension
      */
     public function populateUblSignature(): string
     {
-        $signingTime = date('Y-m-d') . 'T' . date('H:m:s'); //'2023-12-08T01:02:01';
+        $signingTime = date('Y-m-d') . 'T' . date('H:m:s');
 
         $signedProprietiesXml = $this->buildSignedProperties($signingTime);
 
@@ -128,7 +128,7 @@ class UblExtension
         return preg_replace('/^[ ]+(?=<)/m', '$0$0', $formatted);
     }
 
-    private function buildSignatureObject($dsObject, $signingTime)
+    private function buildSignatureObject($dsObject, $signingTime): void
     {
         $xml = $dsObject->add('xades:QualifyingProperties', null, [
             'xmlns:xades' => "http://uri.etsi.org/01903/v1.3.2#",
@@ -156,46 +156,44 @@ class UblExtension
     }
 
     /**
-     * Build qualified SignedProperties string like zatca SDK does, Don't change any space.
+     * Build qualified SignedProperties string like zatca SDK does, Don't change,
+     * Any space decrease or increase will cause wrong xadesSignedPropertiesDigestValue.
      * @param $signingTime
      * @return string
      */
     private function buildSignedProperties($signingTime): string
     {
         $signaturePart = '<xades:SignedProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#" Id="xadesSignedProperties">' . PHP_EOL .
-'                                    <xades:SignedSignatureProperties>' . PHP_EOL .
-'                                        <xades:SigningTime>SIGNING_TIME_VALUE</xades:SigningTime>' . PHP_EOL .
-'                                        <xades:SigningCertificate>' . PHP_EOL .
-'                                            <xades:Cert>' . PHP_EOL .
-'                                                <xades:CertDigest>' . PHP_EOL .
-'                                                    <ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>' . PHP_EOL .
-'                                                    <ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">HASH_DIGEST_VALUE</ds:DigestValue>' . PHP_EOL .
-'                                                </xades:CertDigest>' . PHP_EOL .
-'                                                <xades:IssuerSerial>' . PHP_EOL .
-'                                                    <ds:X509IssuerName xmlns:ds="http://www.w3.org/2000/09/xmldsig#">ISSUER_NAME</ds:X509IssuerName>' . PHP_EOL .
-'                                                    <ds:X509SerialNumber xmlns:ds="http://www.w3.org/2000/09/xmldsig#">SERIAL_NUMBER</ds:X509SerialNumber>' . PHP_EOL .
-'                                                </xades:IssuerSerial>' . PHP_EOL .
-'                                            </xades:Cert>' . PHP_EOL .
-'                                        </xades:SigningCertificate>' . PHP_EOL .
-'                                    </xades:SignedSignatureProperties>' . PHP_EOL .
-'                                </xades:SignedProperties>';
+'                                <xades:SignedSignatureProperties>' . PHP_EOL .
+'                                    <xades:SigningTime>SIGNING_TIME_VALUE</xades:SigningTime>' . PHP_EOL .
+'                                    <xades:SigningCertificate>' . PHP_EOL .
+'                                        <xades:Cert>' . PHP_EOL .
+'                                            <xades:CertDigest>' . PHP_EOL .
+'                                                <ds:DigestMethod xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>' . PHP_EOL .
+'                                                <ds:DigestValue xmlns:ds="http://www.w3.org/2000/09/xmldsig#">HASH_DIGEST_VALUE</ds:DigestValue>' . PHP_EOL .
+'                                            </xades:CertDigest>' . PHP_EOL .
+'                                            <xades:IssuerSerial>' . PHP_EOL .
+'                                                <ds:X509IssuerName xmlns:ds="http://www.w3.org/2000/09/xmldsig#">ISSUER_NAME</ds:X509IssuerName>' . PHP_EOL .
+'                                                <ds:X509SerialNumber xmlns:ds="http://www.w3.org/2000/09/xmldsig#">SERIAL_NUMBER</ds:X509SerialNumber>' . PHP_EOL .
+'                                            </xades:IssuerSerial>' . PHP_EOL .
+'                                        </xades:Cert>' . PHP_EOL .
+'                                    </xades:SigningCertificate>' . PHP_EOL .
+'                                </xades:SignedSignatureProperties>' . PHP_EOL .
+'                            </xades:SignedProperties>';
 
-       return str_replace([
+        return str_replace([
             'SIGNING_TIME_VALUE',
             'HASH_DIGEST_VALUE',
             'ISSUER_NAME',
             'SERIAL_NUMBER',
 
-        ],[
-           $signingTime,
-            $this->certificate->getHash(),
-            $this->certificate->getIssuerDN(X509::DN_STRING),
-            $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString()
-
-        ],$signaturePart);
+        ], [
+                $signingTime,
+                $this->certificate->getHash(),
+                $this->certificate->getIssuerDN(X509::DN_STRING),
+                $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString()
+            ], $signaturePart);
     }
-
-
 
     public function setDigitalSignature(string $digitalSignature): UblExtension
     {
