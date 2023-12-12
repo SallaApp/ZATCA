@@ -108,7 +108,11 @@ class Certificate
         return substr($this->getCurrentCert()['signature'], 1);
     }
 
-    public function getSortedIssuerDN(): string
+    /**
+     * The DN rerun from certificate not formatted as well , so reformat it
+     * @return string
+     */
+    public function getFormattedIssuerDN(): string
     {
         $dnArray = explode(",", str_replace(
                 ["0.9.2342.19200300.100.1.25", "/", ", "], ["DC", ",", ","],

@@ -151,7 +151,7 @@ class UblExtension
 
         $issuerSerial = $cert->add('xades:IssuerSerial');
 
-        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getSortedIssuerDN());
+        $issuerSerial->add('ds:X509IssuerName', $this->certificate->getFormattedIssuerDN());
         $issuerSerial->add('ds:X509SerialNumber', $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString());
     }
 
@@ -190,7 +190,7 @@ class UblExtension
         ], [
                 $signingTime,
                 $this->certificate->getHash(),
-                $this->certificate->getSortedIssuerDN(),
+                $this->certificate->getFormattedIssuerDN(),
                 $this->certificate->getCurrentCert()['tbsCertificate']['serialNumber']->toString()
             ], $signaturePart);
     }
