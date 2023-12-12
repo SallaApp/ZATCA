@@ -107,4 +107,13 @@ class Certificate
         // the X509 add one byte as prefix for the signature, we'll remove it
         return substr($this->getCurrentCert()['signature'], 1);
     }
+
+    public function getSortedIssuerDN(): string
+    {
+        $dnArray = explode(",", str_replace(["/", ", "], [",", ","],
+            $this->certificate->getIssuerDN(X509::DN_STRING))
+        );
+
+        return implode(", ", array_reverse($dnArray));
+    }
 }
