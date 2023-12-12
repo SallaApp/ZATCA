@@ -110,8 +110,10 @@ class Certificate
 
     public function getSortedIssuerDN(): string
     {
-        $dnArray = explode(",", str_replace(["/", ", "], [",", ","],
-            $this->certificate->getIssuerDN(X509::DN_STRING))
+        $dnArray = explode(",", str_replace(
+                ["0.9.2342.19200300.100.1.25", "/", ", "], ["DC", ",", ","],
+                $this->certificate->getIssuerDN(X509::DN_STRING)
+            )
         );
 
         return implode(", ", array_reverse($dnArray));
