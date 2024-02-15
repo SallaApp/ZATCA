@@ -41,9 +41,9 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
         openssl_pkey_export($csr_request->getPrivateKey(), $exported);
 
         $publicKey = openssl_pkey_get_details(openssl_csr_get_public_key($csr_request->getCsrContent()))['key'];
-        if(version_compare(phpversion(), '8.0', '<')) {
+        if (version_compare(phpversion(), '8.0', '<')) {
             $this->assertEquals('OpenSSL key', get_resource_type($csr_request->getPrivateKey()));
-        }else{
+        } else {
             $this->assertInstanceOf(OpenSSLAsymmetricKey::class, $csr_request->getPrivateKey());
         }
 
