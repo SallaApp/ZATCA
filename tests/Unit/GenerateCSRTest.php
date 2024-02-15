@@ -3,17 +3,11 @@
 
 namespace Salla\ZATCA\Test\Unit;
 
+use OpenSSLAsymmetricKey;
 use phpseclib3\Crypt\EC;
 use phpseclib3\File\X509;
 use Salla\ZATCA\GenerateCSR;
-use Salla\ZATCA\GenerateQrCode;
 use Salla\ZATCA\Models\CSRRequest;
-use Salla\ZATCA\Tag;
-use Salla\ZATCA\Tags\InvoiceDate;
-use Salla\ZATCA\Tags\InvoiceTaxAmount;
-use Salla\ZATCA\Tags\InvoiceTotalAmount;
-use Salla\ZATCA\Tags\Seller;
-use Salla\ZATCA\Tags\TaxNumber;
 
 class GenerateCSRTest extends \PHPUnit\Framework\TestCase
 {
@@ -47,7 +41,12 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
         openssl_pkey_export($csr_request->getPrivateKey(), $exported);
 
         $publicKey = openssl_pkey_get_details(openssl_csr_get_public_key($csr_request->getCsrContent()))['key'];
-        $this->assertEquals('OpenSSL key', get_resource_type($csr_request->getPrivateKey()));
+        if(version_compare(phpversion(), '8.0', '<')) {
+            $this->assertEquals('OpenSSL key', get_resource_type($csr_request->getPrivateKey()));
+        }else{
+            $this->assertInstanceOf(OpenSSLAsymmetricKey::class, $csr_request->getPrivateKey());
+        }
+
 
 
         $csrSubject = openssl_csr_get_subject($csr_request->getCsrContent());
