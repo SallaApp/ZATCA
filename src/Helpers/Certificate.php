@@ -68,6 +68,15 @@ class Certificate
     }
 
     /**
+     * return Authorization bearer token by combine plain_certificate and secret_key
+     * @return string
+     */
+    public function getHeaderAuthorization(): string
+    {
+        return 'Basic ' . base64_encode(base64_encode($this->getPlainCertificate()) . ':' . $this->getSecretKey());
+    }
+
+    /**
      * Generate a hash for the certificate
      */
     public function getHash(): string
