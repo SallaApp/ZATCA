@@ -10,9 +10,8 @@ use Salla\ZATCA\Tags\InvoiceTaxAmount;
 use Salla\ZATCA\Tags\InvoiceTotalAmount;
 use Salla\ZATCA\Tags\Seller;
 use Salla\ZATCA\Tags\TaxNumber;
-use Salla\ZATCA\Test\TestCase;
 
-class GenerateQrCodeTest extends TestCase
+class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
 {
     /** @test */
     public function shouldGenerateAQrCode()
