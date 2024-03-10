@@ -1,7 +1,7 @@
 <div id="top"></div>
 <div align="center"> 
   <a href="https://salla.dev"> 
-    <img src="https://salla.dev/wp-content/themes/salla-portal/dist/img/salla-logo.svg" alt="Logo" width="80" height="80"> 
+    <img src="https://salla.dev/wp-content/uploads/2023/03/1-Light.png" alt="Logo"> 
   </a>
   <h1 align="center">ZATCA (Fatoora) QR-Code Implementation</h1>
   <p align="center">
@@ -107,10 +107,10 @@ $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
 
 ## Read The QR-Code
 
-The output of QR-Code is not readable for the human 👀, and some of QR-Code readers maybe show a invalid output because this QR-Code will be scan by the ZATCA apps later after the all steps of integration compete.
-If you interested to see the output of your final QR-Code Image you can use the following website
+The output of the QR-Code is not readable for the human 👀, and some of QR-Code readers may show an invalid output because this QR-Code will be scanned by the ZATCA apps later after all the steps of integration are completed.
+If you are interested to see the output of your final QR-Code Image, you can use the following website:
 
-https://www.onlinebarcodereader.com/
+`https://www.onlinebarcodereader.com/`
 
 ![image](https://user-images.githubusercontent.com/10876587/142364186-f7d5b523-07fc-4776-8b96-9a75f4a455d1.png)
 
@@ -130,7 +130,7 @@ composer test
 
 ## Support
 
-The team is always here to help you. Happen to face an issue? Want to report a bug? You can submit one here on Github using the [Issue Tracker](https://github.com/SallaApp/Salla-CLI/issues/new). If you still have any questions, please contact us via the [Telegram Bot](https://t.me/SallaSupportBot) or join in the Global Developer Community on [Telegram](https://t.me/salladev).
+The team is always here to help you. Happen to face an issue? Want to report a bug? You can submit one here on Github using the [Issue Tracker](https://github.com/SallaApp/Salla-CLI/issues/new). If you still have any questions, please contact us by joining the Salla Global Developer Community on [Telegram](https://t.me/salladev) or via the [Support Email](mailto:support@salla.dev)
 
 
 ## Contributing
