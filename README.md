@@ -199,14 +199,14 @@ use Salla\ZATCA\Helpers\Certificate;
     
     
     /**
-     * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39
+     * For Simplified Tax Invoices and their associated notes, the ECDSA signature of the cryptographic stamp’s public key by ZATCA’s technical CA
      * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_ElectronicE-invoicing_Detailed_Technical_Guidelines.pdf page 61
      */
+    
     $startOfInvoiceTypeCode = $xml->get("cbc:InvoiceTypeCode");
     $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
     
     if ($isSimplified) {
-        // For Simplified Tax Invoices and their associated notes, the ECDSA signature of the cryptographic stamp’s public key by ZATCA’s technical CA
         $qrArray = array_merge($qrArray, [new Tag(9, $certificate->getCertificateSignature())]);
     }
     
