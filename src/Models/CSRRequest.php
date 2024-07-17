@@ -2,7 +2,6 @@
 
 namespace Salla\ZATCA\Models;
 
-use Illuminate\Support\Str;
 use Salla\ZATCA\Exception\CSRValidationException;
 
 class CSRRequest
@@ -125,7 +124,7 @@ class CSRRequest
 
     public function setUID(string $UID): self
     {
-        if( strlen($UID) !== 15 || ! Str::startsWith($UID, '3') || ! Str::endsWith($UID, '3')){
+        if( strlen($UID) !== 15 ||  substr( $UID, 0,1) != '3' ||  substr( $UID, -1,1) != '3'){
             throw new CSRValidationException('The Organization Identifier must be 15 digits, starting andending with 3 ',422);
         }
 
