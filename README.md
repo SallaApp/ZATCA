@@ -96,7 +96,6 @@ $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
     new InvoiceDate('2021-07-12T14:25:09Z'), // invoice date as Zulu ISO8601 @see https://en.wikipedia.org/wiki/ISO_8601
     new InvoiceTotalAmount('100.00'), // invoice total amount
     new InvoiceTaxAmount('15.00') // invoice tax amount
-    // TODO :: Support others tags
 ])->render();
 
 // now you can inject the output to src of html img tag :)
@@ -110,48 +109,99 @@ This library supports both Phase 1 and Phase 2.
 
 Phase 2,include mandates integration of a taxpayer's system with the ZATCA, along with the transmission of e-invoices and e-notes to the ZATCA.
 
-## Phase 2 Usage 
+# Phase 2 Usage
+## Generating && Render QR Code Image
+
+```php
+use Salla\ZATCA\GenerateQrCode;
+use Salla\ZATCA\Tag;
+use Salla\ZATCA\Helpers\UXML;
+use Salla\ZATCA\Helpers\Certificate;
+
+    $xml = UXML::fromString('xml signed invoice text');
+    $invoiceHashBinary = hash('sha256', $xml->element()->C14N(false, false), true);
+    
+    $certificate = new Certificate('certificate plain text (base64 decoded)', 'private key plain text');
+    $certificate->setSecretKey('secret key text');
+    
+    $invoiceHash = base64_encode($invoiceHashBinary);
+    $digitalSignature = base64_encode($certificate->getPrivateKey()->sign($invoiceHashBinary));
+    
+    
+    $issueDate = trim($xml->get("cbc:IssueDate")->asText());
+    $issueTime = trim($xml->get("cbc:IssueTime")->asText());
+    $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
+    
+    $qrArray = [
+        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
+        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
+        new Tag(3, $issueDate . 'T' . $issueTime),
+        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
+        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())),
+        new Tag(6, $invoiceHash),
+        new Tag(7, $digitalSignature),
+        new Tag(8, base64_decode($certificate->getPlainPublicKey()))
+    ];
+    
+    // data:image/png;base64, .........
+    $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
+        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
+        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
+        new Tag(3, $issueDate . 'T' . $issueTime),
+        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
+        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())),
+        new Tag(6, $invoiceHash),
+        new Tag(7, $digitalSignature),
+        new Tag(8, base64_decode($certificate->getPlainPublicKey()))
+    ])->render();
+
+// now you can inject the output to src of html img tag :)
+// <img src="$displayQRCodeAsBase64" alt="QR Code" />
+```
+
 
 ### Generating CSR content, based on parameters
-````php
 
+````php
 use Salla\ZATCA\GenerateCSR;
 use Salla\ZATCA\Models\CSRRequest;
- $CSR = GenerateCSR::fromRequest(
-            CSRRequest::make()
-                ->setUID(string $OrganizationIdentifier)
-                ->setSerialNumber(string $solutionName, string $version, string $serialNumber)
-                ->setCommonName(string $commonName)
-                ->setCountryName('SA')
-                ->setOrganizationName(string $organizationName)
-                ->setOrganizationalUnitName(string $organizationalUnitName)
-                ->setRegisteredAddress(string $registeredAddress)
-                ->setInvoiceType(bool, bool) //invoice types , the default is true, true
-                ->setCurrentZatcaEnv(string $currentEnv) //support all modes ['sandbox','simulation','core']
-                ->setBusinessCategory(string $businessCategory)
-        )->initialize()
-            ->generate();
 
-        // writing the private_key to file 
-        openssl_pkey_export_to_file($CSR->getPrivateKey(), $output_filename);
+$privateKeyFilename = 'output file path name';
+$csrFilename = 'output file path name';
+$CSR = GenerateCSR::fromRequest(
+    CSRRequest::make()
+        ->setUID('string $OrganizationIdentifier')
+        ->setSerialNumber('string $solutionName', 'string $version', 'string $serialNumber')
+        ->setCommonName('string $commonName')
+        ->setCountryName('SA')
+        ->setOrganizationName('string $organizationName')
+        ->setOrganizationalUnitName('string $organizationalUnitName')
+        ->setRegisteredAddress('string $registeredAddress')
+        ->setInvoiceType(true, true) //invoice types , the default is true, true
+        ->setCurrentZatcaEnv('string $currentEnv') //support all modes ['sandbox','simulation','core']
+        ->setBusinessCategory('string $businessCategory')
+)->initialize()
+    ->generate();
 
-        //writing the csr_content to file
-        file_put_contents(string $filename, $CSR->getCsrContent())
- 
- ````
+// writing the private_key to file 
+openssl_pkey_export_to_file($CSR->getPrivateKey(), $privateKeyFilename);
 
+//writing the csr_content to file
+file_put_contents($csrFilename, $CSR->getCsrContent());
 
+````
 
 
 ### Signing Invoices 
 ```php
+use Salla\ZATCA\Helpers\Certificate;
 use Salla\ZATCA\Models\InvoiceSign;
 
 $xmlInvoice = 'xml invoice text';
 
-$certificate = new \Salla\ZATCA\Helpers\Certificate(
-            'certificate plain text (base64 decoded)',
-            'private key plain text'
+$certificate = new Certificate(
+    'certificate plain text (base64 decoded)',
+    'private key plain text'
 );
 
 $certificate->setSecretKey('secret key text');
