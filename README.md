@@ -163,6 +163,7 @@ $invoice = (new InvoiceSign($xmlInvoice, $certificate))->sign();
 // Invoice QR code as base64: $invoice->getQRCode()
 ```
 
+<p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Read The QR-Code
 
