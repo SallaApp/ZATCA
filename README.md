@@ -163,9 +163,12 @@ $invoice = (new InvoiceSign($xmlInvoice, $certificate))->sign();
 // invoice signed as XML: $invoice->getInvoice()
 // Invoice QR code as base64: $invoice->getQRCode()
 ```
-### 3-  Generating && Render QR Code Image
+### 3- Generating QR Code As Base64
 
 ```php
+
+<?php
+
 use Salla\ZATCA\GenerateQrCode;
 use Salla\ZATCA\Tag;
 use Salla\ZATCA\Helpers\UXML;
@@ -177,36 +180,37 @@ use Salla\ZATCA\Helpers\Certificate;
     $certificate = new Certificate('certificate plain text (base64 decoded)', 'private key plain text');
     $certificate->setSecretKey('secret key text');
     
-    $invoiceHash = base64_encode($invoiceHashBinary);
     $digitalSignature = base64_encode($certificate->getPrivateKey()->sign($invoiceHashBinary));
-    
     
     $issueDate = trim($xml->get("cbc:IssueDate")->asText());
     $issueTime = trim($xml->get("cbc:IssueTime")->asText());
     $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
     
     $qrArray = [
-        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
-        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
-        new Tag(3, $issueDate . 'T' . $issueTime),
-        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
-        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())),
-        new Tag(6, $invoiceHash),
+        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())), // seller name 
+        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())), // seller tax number
+        new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601
+        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())), //invoice total amount
+        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())), // invoice tax amount
+        new Tag(6, base64_encode($invoiceHashBinary)), //invoice hash
         new Tag(7, $digitalSignature),
-        new Tag(8, base64_decode($certificate->getPlainPublicKey()))
+        new Tag(8, base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
     ];
     
-    // data:image/png;base64, .........
-    $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
-        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
-        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
-        new Tag(3, $issueDate . 'T' . $issueTime),
-        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
-        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())),
-        new Tag(6, $invoiceHash),
-        new Tag(7, $digitalSignature),
-        new Tag(8, base64_decode($certificate->getPlainPublicKey()))
-    ])->render();
+    
+    /**
+     * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39
+     * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_ElectronicE-invoicing_Detailed_Technical_Guidelines.pdf page 61
+     */
+    $startOfInvoiceTypeCode = $xml->get("cbc:InvoiceTypeCode");
+    $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
+    
+    if ($isSimplified) {
+        $qrArray = array_merge($qrArray, [new Tag(9, $certificate->getCertificateSignature())]);
+    }
+    
+    $QRCodeAsBase64 = GenerateQrCode::fromArray($qrArray)->toBase64();
+
 
 // now you can inject the output to src of html img tag :)
 // <img src="$displayQRCodeAsBase64" alt="QR Code" />
