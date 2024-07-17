@@ -83,7 +83,7 @@ EOL;
         if (! ($privateKey = openssl_pkey_new($this->opensslConfig))) {
             while (($e = openssl_error_string()) !== false) {
                 $this->logErrors(function () use ($e) {
-                    return $e . "\n";  //todo implement logging functionality
+                    return $e . "\n";
                 });
             }
             throw new \RuntimeException('Error Generating New Private Key');
