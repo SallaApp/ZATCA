@@ -48,7 +48,6 @@ $generatedString = GenerateQrCode::fromArray([
     new InvoiceDate('2021-07-12T14:25:09Z'), // invoice date as Zulu ISO8601 @see https://en.wikipedia.org/wiki/ISO_8601
     new InvoiceTotalAmount('100.00'), // invoice total amount
     new InvoiceTaxAmount('15.00') // invoice tax amount
-    // TODO :: Support others tags
 ])->toBase64();
 
 // > Output
