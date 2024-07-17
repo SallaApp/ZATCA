@@ -110,7 +110,60 @@ This library supports both Phase 1 and Phase 2.
 Phase 2,include mandates integration of a taxpayer's system with the ZATCA, along with the transmission of e-invoices and e-notes to the ZATCA.
 
 # Phase 2 Usage
-## Generating && Render QR Code Image
+
+### 1- Generating CSR content, based on parameters
+
+````php
+use Salla\ZATCA\GenerateCSR;
+use Salla\ZATCA\Models\CSRRequest;
+
+$privateKeyFilename = 'output file path name';
+$csrFilename = 'output file path name';
+$CSR = GenerateCSR::fromRequest(
+    CSRRequest::make()
+        ->setUID('string $OrganizationIdentifier')
+        ->setSerialNumber('string $solutionName', 'string $version', 'string $serialNumber')
+        ->setCommonName('string $commonName')
+        ->setCountryName('SA')
+        ->setOrganizationName('string $organizationName')
+        ->setOrganizationalUnitName('string $organizationalUnitName')
+        ->setRegisteredAddress('string $registeredAddress')
+        ->setInvoiceType(true, true) //invoice types , the default is true, true
+        ->setCurrentZatcaEnv('string $currentEnv') //support all modes ['sandbox','simulation','core']
+        ->setBusinessCategory('string $businessCategory')
+)->initialize()
+    ->generate();
+
+// writing the private_key to file 
+openssl_pkey_export_to_file($CSR->getPrivateKey(), $privateKeyFilename);
+
+//writing the csr_content to file
+file_put_contents($csrFilename, $CSR->getCsrContent());
+
+````
+
+
+### 2- Signing Invoices 
+```php
+use Salla\ZATCA\Helpers\Certificate;
+use Salla\ZATCA\Models\InvoiceSign;
+
+$xmlInvoice = 'xml invoice text';
+
+$certificate = new Certificate(
+    'certificate plain text (base64 decoded)',
+    'private key plain text'
+);
+
+$certificate->setSecretKey('secret key text');
+
+$invoice = (new InvoiceSign($xmlInvoice, $certificate))->sign();
+
+// invoice Hash: $invoice->getHash()
+// invoice signed as XML: $invoice->getInvoice()
+// Invoice QR code as base64: $invoice->getQRCode()
+```
+### 3-  Generating && Render QR Code Image
 
 ```php
 use Salla\ZATCA\GenerateQrCode;
@@ -160,58 +213,6 @@ use Salla\ZATCA\Helpers\Certificate;
 ```
 
 
-### Generating CSR content, based on parameters
-
-````php
-use Salla\ZATCA\GenerateCSR;
-use Salla\ZATCA\Models\CSRRequest;
-
-$privateKeyFilename = 'output file path name';
-$csrFilename = 'output file path name';
-$CSR = GenerateCSR::fromRequest(
-    CSRRequest::make()
-        ->setUID('string $OrganizationIdentifier')
-        ->setSerialNumber('string $solutionName', 'string $version', 'string $serialNumber')
-        ->setCommonName('string $commonName')
-        ->setCountryName('SA')
-        ->setOrganizationName('string $organizationName')
-        ->setOrganizationalUnitName('string $organizationalUnitName')
-        ->setRegisteredAddress('string $registeredAddress')
-        ->setInvoiceType(true, true) //invoice types , the default is true, true
-        ->setCurrentZatcaEnv('string $currentEnv') //support all modes ['sandbox','simulation','core']
-        ->setBusinessCategory('string $businessCategory')
-)->initialize()
-    ->generate();
-
-// writing the private_key to file 
-openssl_pkey_export_to_file($CSR->getPrivateKey(), $privateKeyFilename);
-
-//writing the csr_content to file
-file_put_contents($csrFilename, $CSR->getCsrContent());
-
-````
-
-
-### Signing Invoices 
-```php
-use Salla\ZATCA\Helpers\Certificate;
-use Salla\ZATCA\Models\InvoiceSign;
-
-$xmlInvoice = 'xml invoice text';
-
-$certificate = new Certificate(
-    'certificate plain text (base64 decoded)',
-    'private key plain text'
-);
-
-$certificate->setSecretKey('secret key text');
-
-$invoice = (new InvoiceSign($xmlInvoice, $certificate))->sign();
-
-// invoice Hash: $invoice->getHash()
-// invoice signed as XML: $invoice->getInvoice()
-// Invoice QR code as base64: $invoice->getQRCode()
-```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
