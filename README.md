@@ -174,7 +174,7 @@ use Salla\ZATCA\Tag;
 use Salla\ZATCA\Helpers\UXML;
 use Salla\ZATCA\Helpers\Certificate;
 
-    $xml = UXML::fromString('xml signed invoice text');
+    $xml = UXML::fromString('xml invoice text');
     $invoiceHashBinary = hash('sha256', $xml->element()->C14N(false, false), true);
     
     $certificate = new Certificate('certificate plain text (base64 decoded)', 'private key plain text');
