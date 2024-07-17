@@ -81,9 +81,9 @@ EOL;
     public function generate(): CSR
     {
         if (! ($privateKey = openssl_pkey_new($this->opensslConfig))) {
-            while (($e = openssl_error_string()) !== false) {
-                $this->logErrors(function () use ($e) {
-                    return $e . "\n";
+            while (($error = openssl_error_string()) !== false) {
+                $this->logErrors(function () use ($error) {
+                    return $error . "\n";
                 });
             }
             throw new \RuntimeException('Error Generating New Private Key');
@@ -92,9 +92,9 @@ EOL;
         $csr = openssl_csr_new($this->data['dn'], $privateKey, $this->opensslConfig);
 
         if (! ($csr)) {
-            while (($e = openssl_error_string()) !== false) {
-                $this->logErrors(function () use ($e) {
-                    return $e . "\n";
+            while (($error = openssl_error_string()) !== false) {
+                $this->logErrors(function () use ($error) {
+                    return $error . "\n";
                 });
             }
             throw new \Exception('Error Generating New Certificate Signing Request');
