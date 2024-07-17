@@ -187,13 +187,13 @@ use Salla\ZATCA\Helpers\Certificate;
     $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
     
     $qrArray = [
-        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())), // seller name 
-        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())), // seller tax number
-        new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601
-        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())), //invoice total amount
-        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())), // invoice tax amount
-        new Tag(6, base64_encode($invoiceHashBinary)), //invoice hash
-        new Tag(7, $digitalSignature),
+        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())), // Seller׳s name 
+        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())), // VAT registration number of the seller
+        new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
+        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())), //Invoice total (with VAT)
+        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())), // VAT total
+        new Tag(6, base64_encode($invoiceHashBinary)), //Hash of XML invoice
+        new Tag(7, $digitalSignature), // ECDSA signature
         new Tag(8, base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
     ];
     
@@ -206,6 +206,7 @@ use Salla\ZATCA\Helpers\Certificate;
     $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
     
     if ($isSimplified) {
+        // For Simplified Tax Invoices and their associated notes, the ECDSA signature of the cryptographic stamp’s public key by ZATCA’s technical CA
         $qrArray = array_merge($qrArray, [new Tag(9, $certificate->getCertificateSignature())]);
     }
     
