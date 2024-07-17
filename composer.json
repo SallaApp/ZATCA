@@ -27,7 +27,7 @@
         "ext-mbstring": "*",
         "robrichards/xmlseclibs": "^3.1",
         "josemmo/uxml": "^0.1.4",
-        "chillerlan/php-qrcode": "^4.3 || ^3.4 || ^5.0",
+        "chillerlan/php-qrcode": "^4.3 || ^3.4",
         "symfony/polyfill-php80": "^1.16",
         "phpseclib/phpseclib": "3.0.x-dev"
     },
