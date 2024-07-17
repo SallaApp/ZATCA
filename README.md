@@ -211,9 +211,8 @@ use Salla\ZATCA\Helpers\Certificate;
     
     $QRCodeAsBase64 = GenerateQrCode::fromArray($qrArray)->toBase64();
 
-
-// now you can inject the output to src of html img tag :)
-// <img src="$displayQRCodeAsBase64" alt="QR Code" />
+    //$QRCodeAsBase64 output will be like this 
+    //AQ1TYWxsYSAtIFNhbGxhAg8zMTA0NjE0MzU3MDAwMDMDFDIwMjMtMTItMzFUMjE6MDA6MDBaBAY0MDguNjkFBTUzLjMxBiw1TXZmVmZTWGRSZzgyMWU4Q0E3bE1WcDdNS1J4Q2FBWWZHTm90THlHNUg4PQdgTUVRQ0lEOGthSTF1Z29EcWJkN3NEVmFCVE9yOUswWlVwRkZNY2hON2FsNGgyTEhrQWlCYnZxZktkK0xaN0hEc0FMakxmeTA0dTBMNVRhcjhxenowYjBlb0EzMUtIdz09CFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAATmBleqoCAfxDveLQVAKCvHSjNxoudWhRNQ8zThTxzBtgjAqZQ7vBJWvu2Ut0MxYa8vq7O4tgusgmcLBDhK/xNCCUcwRQIhAIhuJ6o4ETNSosMEf/OLVbp+TZqi2IGSxsgyC54yZgQAAiB3lwym6zpkPspQrT+luMte/ifw4THG+waV+SmXNSukmQ==
 ```
 
 
