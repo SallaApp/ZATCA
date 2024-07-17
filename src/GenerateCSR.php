@@ -102,9 +102,8 @@ EOL;
 
         openssl_csr_export($csr, $csrAsString);
 
-        if (isset($this->opensslConfig['config']) && file_exists($this->opensslConfig['config'])) {
-            unlink($this->opensslConfig['config']);
-        }
+        @unlink($this->opensslConfig['config']);
+
 
         return new CSR($csrAsString, $privateKey);
     }
