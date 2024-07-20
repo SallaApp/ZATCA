@@ -324,17 +324,12 @@ class UXML
      * Generate Tags array for QR generation base in the current invoice xml
      *
      * @param Certificate $certificate
+     * @param string $invoiceHash the base64 encoded string of the binary invoice hash
+     * @param string $digitalSignature
      * @return array
      */
-    public function toTagsArray(Certificate $certificate): array
+    public function toTagsArray(Certificate $certificate, string $invoiceHash, string $digitalSignature): array
     {
-        $hashBinary = $this->getHashBinary();
-        /**
-         * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
-         * @link page 53
-         */
-        $digitalSignature = base64_encode($certificate->getPrivateKey()->sign($hashBinary));
-
         $issueDate = $this->get("cbc:IssueDate")->asText();
         $issueTime = $this->get("cbc:IssueTime")->asText();
         $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
@@ -345,7 +340,7 @@ class UXML
             new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
             new Tag(4, $this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()), //Invoice total (with VAT)
             new Tag(5, $this->get("cac:TaxTotal")->asText()), // VAT total
-            new Tag(6, base64_encode($hashBinary)), // Hash of XML invoice
+            new Tag(6, $invoiceHash), // Hash of XML invoice
             new Tag(7, $digitalSignature), // ECDSA signature
             new Tag(8, base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
         ];
@@ -366,18 +361,17 @@ class UXML
 
     private function getHashBinary(): string
     {
-        $clonedXML = clone $this;
         /**
          * remove unwanted tags
          *
          * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
          * @link page 53
          */
-        $clonedXML->removeByXpath('ext:UBLExtensions');
-        $clonedXML->removeByXpath('cac:Signature');
-        $clonedXML->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+        $this->removeByXpath('ext:UBLExtensions');
+        $this->removeByXpath('cac:Signature');
+        $this->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
 
-        return hash('sha256', $clonedXML->element()->C14N(false, false), true);
+        return hash('sha256', $this->element()->C14N(false, false), true);
     }
 
     /**
