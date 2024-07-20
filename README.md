@@ -23,12 +23,6 @@
 * An ext-dom extension
 
 
-### Dependencies
-* "robrichards/xmlseclibs": "^3.1",
-* "josemmo/uxml": "^0.1.4",
-* "chillerlan/php-qrcode": "^4.3",
-* "phpseclib/phpseclib": "~3.0"
-
 ## Installation
 
 You can install the package via composer:
