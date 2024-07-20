@@ -21,7 +21,7 @@ class InvoiceSign
      */
     protected $certificate;
 
-    /** @var \UXML\UXML */
+    /** @var UXML */
     protected $xmlDom;
 
     protected $digitalSignature;
@@ -36,11 +36,6 @@ class InvoiceSign
 
     public function sign(): Invoice
     {
-        // we need to make sure the original xml have 4 indentation in it's lines
-        if (!str_contains($this->xmlInvoice, '    <cbc:ProfileID>')) {
-            $this->xmlInvoice = preg_replace('/^[ ]+(?=<)/m', '$0$0', $this->xmlInvoice);
-        }
-
         $this->xmlDom = UXML::fromString($this->xmlInvoice);
 
         /**
@@ -94,37 +89,9 @@ class InvoiceSign
 
     private function generateQRCode(): string
     {
-        $issueDate = trim($this->xmlDom->get("cbc:IssueDate")->asText());
-        $issueTime = trim($this->xmlDom->get("cbc:IssueTime")->asText());
-        $issueTime = stripos($issueTime, 'Z') === false ? $issueTime .'Z' : $issueTime;
-
-        $qrArray = [
-            new Tag(1, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())),
-            new Tag(2, trim($this->xmlDom->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())),
-            new Tag(3, $issueDate . 'T' . $issueTime),
-            new Tag(4, trim($this->xmlDom->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())),
-            new Tag(5, trim($this->xmlDom->get("cac:TaxTotal")->asText())),
-            new Tag(6, $this->invoiceHash),
-            new Tag(7, $this->digitalSignature),
-            new Tag(8, base64_decode($this->certificate->getPlainPublicKey()))
-        ];
-
-        /**
-         * NOTE on UN/EDIFACT code list 1001 compliance:
-         * For Simplified Tax Invoice, code is 388 and subtype is 02. ex. <cbc:InvoiceTypeCode name=”020000”>388</cbc:InvoiceTypeCode>
-         * For simplified debit note, code is 383 and subtype is 02. ex. <cbc:InvoiceTypeCode name=”020000”>383</cbc:InvoiceTypeCode>
-         * For simplified credit note, code is 381 and subtype is 02. ex. <cbc:InvoiceTypeCode name=”020000”>381</cbc:InvoiceTypeCode>
-         *
-         * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_Electronic_Invoice_XML_Implementation_Standard_vF.pdf page 39
-         */
-        $startOfInvoiceTypeCode = $this->xmlDom->get("cbc:InvoiceTypeCode");
-        $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
-
-        if ($isSimplified) {
-            $qrArray = array_merge($qrArray, [new Tag(9, $this->certificate->getCertificateSignature())]);
-        }
-
-        return GenerateQrCode::fromArray($qrArray)->toBase64();
+        return GenerateQrCode::fromArray(
+            $this->xmlDom->toTagsArray($this->certificate, $this->invoiceHash)
+        )->toBase64();
     }
 
     /**

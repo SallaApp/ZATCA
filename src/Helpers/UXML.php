@@ -7,8 +7,6 @@ use DOMElement;
 use DOMException;
 use DOMXPath;
 use InvalidArgumentException;
-use PHPUnit\Framework\Exception;
-use Salla\ZATCA\GenerateQrCode;
 use Salla\ZATCA\Tag;
 use WeakMap;
 
@@ -44,9 +42,14 @@ class UXML
      */
     public static function fromString(string $xmlString): self
     {
-        $doc                     = new DOMDocument();
+        $doc = new DOMDocument();
         $doc->preserveWhiteSpace = true;
         $doc->formatOutput = true;
+
+        // we need to make sure the original xml have 4 indentation in its lines
+        if (!str_contains($xmlString, '    <cbc:ProfileID>')) {
+            $xmlString = preg_replace('/^[ ]+(?=<)/m', '$0$0', $xmlString);
+        }
 
         if ($doc->loadXML($xmlString) === false) {
             throw new InvalidArgumentException('Failed to parse XML string');
@@ -89,7 +92,7 @@ class UXML
         $targetDoc = ($doc === null) ? new DOMDocument() : $doc;
 
         // Get namespace
-        $prefix    = strstr($name, ':', true) ?: '';
+        $prefix = strstr($name, ':', true) ?: '';
         $namespace = $attrs[empty($prefix) ? 'xmlns' : "xmlns:$prefix"] ?? $targetDoc->lookupNamespaceUri($prefix);
         try {
             // Create element
@@ -114,13 +117,12 @@ class UXML
             foreach ($attrs as $attrName => $attrValue) {
                 if ($attrName === 'xmlns' || strpos($attrName, 'xmlns:') === 0) {
                     $domElement->setAttributeNS('http://www.w3.org/2000/xmlns/', $attrName, $attrValue);
-                }
-                else {
+                } else {
                     $domElement->setAttribute($attrName, $attrValue);
                 }
             }
-        }catch (\Exception $ex){
-            throw new \Exception('errorr'.$ex->getMessage(). ', name:'.$name);
+        } catch (\Exception $ex) {
+            throw new \Exception('errorr' . $ex->getMessage() . ', name:' . $name);
         }
         // Create instance
         return new self($domElement);
@@ -143,8 +145,7 @@ class UXML
         $this->element = $element;
         if (self::$elements) {
             self::$elements->offsetSet($this->element, $this); // @phan-suppress-current-line PhanPossiblyNonClassMethodCall
-        }
-        else {
+        } else {
             $this->element->uxml = $this;
         }
     }
@@ -206,9 +207,9 @@ class UXML
     public function getAll(string $xpath, ?int $limit = null): array
     {
         $namespaces = [];
-        $xpath      = preg_replace_callback('/{(.+?)}/', static function ($match) use (&$namespaces) {
+        $xpath = preg_replace_callback('/{(.+?)}/', static function ($match) use (&$namespaces) {
             $ns = $match[1];
-            if (! isset($namespaces[$ns])) {
+            if (!isset($namespaces[$ns])) {
                 $namespaces[$ns] = self::NS_PREFIX . count($namespaces);
             }
             return $namespaces[$ns] . ':';
@@ -222,10 +223,10 @@ class UXML
         }
 
         // Parse results
-        $res      = [];
+        $res = [];
         $domNodes = $xpathInstance->query($xpath, $this->element);
         foreach ($domNodes as $domNode) {
-            if (! $domNode instanceof DOMElement) continue;
+            if (!$domNode instanceof DOMElement) continue;
             $res[] = self::fromElement($domNode);
             if ($limit !== null && --$limit <= 0) break;
         }
@@ -284,7 +285,7 @@ class UXML
      */
     public function asText(): string
     {
-        return $this->element->textContent;
+        return trim($this->element->textContent);
     }
 
     /**
@@ -302,11 +303,10 @@ class UXML
         // Define document properties
         if ($version === null) {
             $doc->xmlStandalone = true;
-        }
-        else {
+        } else {
             $doc->xmlVersion = $version;
         }
-        $doc->encoding     = $encoding;
+        $doc->encoding = $encoding;
         $doc->formatOutput = $format;
 
         // Export XML string
@@ -318,6 +318,74 @@ class UXML
         unset($doc);
 
         return $res;
+    }
+
+    /**
+     * Generate Tags array for QR generation base in the current invoice xml
+     *
+     * @param Certificate $certificate
+     * @param string|null $invoiceHash the base64 encoded string of the binary invoice hash
+     * @return array
+     */
+    public function toTagsArray(Certificate $certificate, ?string $invoiceHash): array
+    {
+        if (!$invoiceHash) {
+            $invoiceHash = $this->getXmlHash();
+        }
+
+        $digitalSignature = base64_encode($certificate->getPrivateKey()->sign(base64_decode($invoiceHash)));
+
+        $issueDate = $this->get("cbc:IssueDate")->asText();
+        $issueTime = $this->get("cbc:IssueTime")->asText();
+        $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
+
+        $qrArray = [
+            new Tag(1, $this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText()), // Seller׳s name
+            new Tag(2, $this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()), // VAT registration number of the seller
+            new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
+            new Tag(4, $this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()), //Invoice total (with VAT)
+            new Tag(5, $this->get("cac:TaxTotal")->asText()), // VAT total
+            new Tag(6, $invoiceHash), // Hash of XML invoice
+            new Tag(7, $digitalSignature), // ECDSA signature
+            new Tag(8, base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
+        ];
+
+        /**
+         * For Simplified Tax Invoices and their associated notes, the ECDSA signature of the cryptographic stamp’s public key by ZATCA’s technical CA
+         * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_ElectronicE-invoicing_Detailed_Technical_Guidelines.pdf page 61
+         */
+        $startOfInvoiceTypeCode = $this->get("cbc:InvoiceTypeCode");
+        $isSimplified = $startOfInvoiceTypeCode && str_starts_with($startOfInvoiceTypeCode->element()->getAttribute('name'), "02");
+
+        if ($isSimplified) {
+            $qrArray = array_merge($qrArray, [new Tag(9, $certificate->getCertificateSignature())]);
+        }
+
+        return $qrArray;
+    }
+
+    /**
+     * Generate invoice hash for the current xml as base64 encoded.
+     *
+     * @return string
+     */
+    public function getXmlHash(): string
+    {
+        $clonedXML = clone $this;
+
+        /**
+         * remove unwanted tags
+         *
+         * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
+         * @link page 53
+         */
+        $clonedXML->removeByXpath('ext:UBLExtensions');
+        $clonedXML->removeByXpath('cac:Signature');
+        $clonedXML->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+
+        return base64_encode(
+            hash('sha256', $clonedXML->element()->C14N(false, false), true)
+        );
     }
 
     /**

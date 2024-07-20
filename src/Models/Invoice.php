@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Salla\ZATCA\Models;
-
 
 use Salla\ZATCA\Helpers\Certificate;
 
@@ -22,9 +20,9 @@ class Invoice
 
     public function __construct(string $invoice, string $hash, string $qrCode, Certificate $certificate)
     {
-        $this->invoice     = $invoice;
-        $this->hash        = $hash;
-        $this->qrCode      = $qrCode;
+        $this->invoice = $invoice;
+        $this->hash = $hash;
+        $this->qrCode = $qrCode;
         $this->certificate = $certificate;
     }
 

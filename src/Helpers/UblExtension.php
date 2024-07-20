@@ -2,8 +2,6 @@
 
 namespace Salla\ZATCA\Helpers;
 
-use phpseclib3\File\X509;
-
 /**
  * Class UblExtension
  * @package Salla\ZATCA\Helpers

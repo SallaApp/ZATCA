@@ -6,7 +6,7 @@ use Salla\ZATCA\Exception\CSRValidationException;
 
 class CSRRequest
 {
-    const SANDBOX    = 'sandbox';
+    const SANDBOX = 'sandbox';
 
     const SIMULATION = 'simulation';
 
@@ -102,8 +102,8 @@ class CSRRequest
 
     public function setOrganizationalUnitName(string $organizationalUnitName): self
     {
-        if (strpos($this->getUID(), '1', 10) == 1  &&  strlen($organizationalUnitName) != 10) {
-            throw new CSRValidationException('The Organization Unit Name Must Match this (If 11th digit of Organization Identifier(UID) = 1 then needs to be 10 digit number)',422);
+        if (strpos($this->getUID(), '1', 10) == 1 && strlen($organizationalUnitName) != 10) {
+            throw new CSRValidationException('The Organization Unit Name Must Match this (If 11th digit of Organization Identifier(UID) = 1 then needs to be 10 digit number)', 422);
         }
 
         $this->organizationalUnitName = $organizationalUnitName;
@@ -113,8 +113,8 @@ class CSRRequest
 
     public function setCountryName(string $countryName): self
     {
-        if(strlen($countryName) !== 2){
-            throw new CSRValidationException('The Country name must be Two chars only',422);
+        if (strlen($countryName) !== 2) {
+            throw new CSRValidationException('The Country name must be Two chars only', 422);
         }
 
         $this->countryName = $countryName;
@@ -124,8 +124,8 @@ class CSRRequest
 
     public function setUID(string $UID): self
     {
-        if( strlen($UID) !== 15 ||  substr( $UID, 0,1) != '3' ||  substr( $UID, -1,1) != '3'){
-            throw new CSRValidationException('The Organization Identifier must be 15 digits, starting andending with 3 ',422);
+        if (strlen($UID) !== 15 || substr($UID, 0, 1) != '3' || substr($UID, -1, 1) != '3') {
+            throw new CSRValidationException('The Organization Identifier must be 15 digits, starting andending with 3 ', 422);
         }
 
         $this->UID = $UID;
@@ -191,18 +191,18 @@ class CSRRequest
     public function toArray(): array
     {
         return [
-            'dn'      => [
-                "CN"                     => $this->getCommonName(),
-                "organizationName"       => $this->getOrganizationName(),
+            'dn' => [
+                "CN" => $this->getCommonName(),
+                "organizationName" => $this->getOrganizationName(),
                 "organizationalUnitName" => $this->getOrganizationalUnitName(),
-                "C"                      => $this->getCountry()
+                "C" => $this->getCountry()
             ],
             'subject' => [
-                "SN"                   => $this->getSerialNumber(),
-                "UID"                  => $this->getUID(),
-                "title"                => $this->getInvoiceType(),
-                "registeredAddress"    => $this->getRegisteredAddress(),
-                "businessCategory"     => $this->getBusinessCategory()
+                "SN" => $this->getSerialNumber(),
+                "UID" => $this->getUID(),
+                "title" => $this->getInvoiceType(),
+                "registeredAddress" => $this->getRegisteredAddress(),
+                "businessCategory" => $this->getBusinessCategory()
             ]
         ];
     }

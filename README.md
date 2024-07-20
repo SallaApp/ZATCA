@@ -32,7 +32,89 @@ $ composer require salla/zatca
 
 ## Usage
 
-### Generate Base64
+This library supports both Phase 1 and Phase 2.
+
+Phase 2, include mandates integration of a taxpayer's system with the ZATCA, along with the transmission of e-invoices and e-notes to the ZATCA.
+
+### Generating CSR
+
+You need to onboard the merchant via the ZATCA APIs to had the authority to signing the invoice on behalf of the merchant.
+
+````php
+use Salla\ZATCA\GenerateCSR;
+use Salla\ZATCA\Models\CSRRequest;
+
+$data = CSRRequest::make()
+    ->setUID('string $OrganizationIdentifier')
+    ->setSerialNumber('string $solutionName', 'string $version', 'string $serialNumber')
+    ->setCommonName('string $commonName')
+    ->setCountryName('SA')
+    ->setOrganizationName('string $organizationName')
+    ->setOrganizationalUnitName('string $organizationalUnitName')
+    ->setRegisteredAddress('string $registeredAddress')
+    ->setInvoiceType(true, true) //invoice types , the default is true, true
+    ->setCurrentZatcaEnv('string $currentEnv') //support all modes ['sandbox','simulation','core']
+    ->setBusinessCategory('string $businessCategory');
+
+$CSR = GenerateCSR::fromRequest($data)->initialize()->generate();
+
+// writing the private_key to file
+openssl_pkey_export_to_file($CSR->getPrivateKey(), 'output file path name');
+
+//writing the csr_content to file
+file_put_contents('output file path name', $CSR->getCsrContent());
+````
+
+At this stage you need to share the CSR to the ZATCA via APIs to get the certification for the current merchant
+
+### Signing Invoices & Generate QA code
+
+```php
+use Salla\ZATCA\Helpers\Certificate;
+use Salla\ZATCA\Models\InvoiceSign;
+
+$xmlInvoice = 'xml invoice text';
+
+$certificate = (new Certificate(
+    'certificate plain text (base64 decoded)', // get from ZATCA when you exchange the CSR via APIs
+    'private key plain text' // generated at stage one
+))->setSecretKey('secret key text'); // get from ZATCA when you exchange the CSR via APIs
+
+$invoice = (new InvoiceSign($xmlInvoice, $certificate))->sign();
+
+// invoice Hash: $invoice->getHash()
+// invoice signed as XML: $invoice->getInvoice()
+// Invoice QR code as base64: $invoice->getQRCode()
+```
+
+### Generating QR Code As Base64
+
+> it's better to use `InvoiceSign` class to sign the invoice and generate the QR code for it in the same process
+
+```php
+<?php
+
+use Salla\ZATCA\GenerateQrCode;
+use Salla\ZATCA\Helpers\UXML;
+use Salla\ZATCA\Helpers\Certificate;
+
+$xmlInvoice = 'xml invoice text';
+
+$certificate = (new Certificate(
+    'certificate plain text (base64 decoded)', // get from ZATCA when you exchange the CSR via APIs
+    'private key plain text' // generated at stage one
+))->setSecretKey('secret key text'); // get from ZATCA when you exchange the CSR via APIs
+
+$tags = UXML::fromString($xmlInvoice)->toTagsArray($certificate);
+
+$QRCodeAsBase64 = GenerateQrCode::fromArray($tags)->toBase64();
+
+//$QRCodeAsBase64 output will be like this
+//AQ1TYWxsYSAtIFNhbGxhAg8zMTA0NjE0MzU3MDAwMDMDFDIwMjMtMTItMzFUMjE6MDA6MDBaBAY0MDguNjkFBTUzLjMxBiw1TXZmVmZTWGRSZzgyMWU4Q0E3bE1WcDdNS1J4Q2FBWWZHTm90THlHNUg4PQdgTUVRQ0lEOGthSTF1Z29EcWJkN3NEVmFCVE9yOUswWlVwRkZNY2hON2FsNGgyTEhrQWlCYnZxZktkK0xaN0hEc0FMakxmeTA0dTBMNVRhcjhxenowYjBlb0EzMUtIdz09CFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAATmBleqoCAfxDveLQVAKCvHSjNxoudWhRNQ8zThTxzBtgjAqZQ7vBJWvu2Ut0MxYa8vq7O4tgusgmcLBDhK/xNCCUcwRQIhAIhuJ6o4ETNSosMEf/OLVbp+TZqi2IGSxsgyC54yZgQAAiB3lwym6zpkPspQrT+luMte/ifw4THG+waV+SmXNSukmQ==
+```
+
+
+### Generate Base64 (phase one)
 
 ```php
 use Salla\ZATCA\GenerateQrCode;
@@ -101,119 +183,6 @@ $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
 ```
 <p align="right">(<a href="#top">back to top</a>)</p>
 
-## Implement ZATCA's E-Invoicing requirements Phase 2
-
-This library supports both Phase 1 and Phase 2.
-
-Phase 2,include mandates integration of a taxpayer's system with the ZATCA, along with the transmission of e-invoices and e-notes to the ZATCA.
-
-# Phase 2 Usage
-
-### 1- Generating CSR content, based on parameters
-
-````php
-use Salla\ZATCA\GenerateCSR;
-use Salla\ZATCA\Models\CSRRequest;
-
-$privateKeyFilename = 'output file path name';
-$csrFilename = 'output file path name';
-$CSR = GenerateCSR::fromRequest(
-    CSRRequest::make()
-        ->setUID('string $OrganizationIdentifier')
-        ->setSerialNumber('string $solutionName', 'string $version', 'string $serialNumber')
-        ->setCommonName('string $commonName')
-        ->setCountryName('SA')
-        ->setOrganizationName('string $organizationName')
-        ->setOrganizationalUnitName('string $organizationalUnitName')
-        ->setRegisteredAddress('string $registeredAddress')
-        ->setInvoiceType(true, true) //invoice types , the default is true, true
-        ->setCurrentZatcaEnv('string $currentEnv') //support all modes ['sandbox','simulation','core']
-        ->setBusinessCategory('string $businessCategory')
-)->initialize()
-    ->generate();
-
-// writing the private_key to file 
-openssl_pkey_export_to_file($CSR->getPrivateKey(), $privateKeyFilename);
-
-//writing the csr_content to file
-file_put_contents($csrFilename, $CSR->getCsrContent());
-
-````
-
-
-### 2- Signing Invoices 
-```php
-use Salla\ZATCA\Helpers\Certificate;
-use Salla\ZATCA\Models\InvoiceSign;
-
-$xmlInvoice = 'xml invoice text';
-
-$certificate = new Certificate(
-    'certificate plain text (base64 decoded)',
-    'private key plain text'
-);
-
-$certificate->setSecretKey('secret key text');
-
-$invoice = (new InvoiceSign($xmlInvoice, $certificate))->sign();
-
-// invoice Hash: $invoice->getHash()
-// invoice signed as XML: $invoice->getInvoice()
-// Invoice QR code as base64: $invoice->getQRCode()
-```
-### 3- Generating QR Code As Base64
-
-```php
-
-<?php
-
-use Salla\ZATCA\GenerateQrCode;
-use Salla\ZATCA\Tag;
-use Salla\ZATCA\Helpers\UXML;
-use Salla\ZATCA\Helpers\Certificate;
-
-    $xml = UXML::fromString('xml invoice text');
-    $invoiceHashBinary = hash('sha256', $xml->element()->C14N(false, false), true);
-    
-    $certificate = new Certificate('certificate plain text (base64 decoded)', 'private key plain text');
-    $certificate->setSecretKey('secret key text');
-    
-    $digitalSignature = base64_encode($certificate->getPrivateKey()->sign($invoiceHashBinary));
-    
-    $issueDate = trim($xml->get("cbc:IssueDate")->asText());
-    $issueTime = trim($xml->get("cbc:IssueTime")->asText());
-    $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
-    
-    $qrArray = [
-        new Tag(1, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText())), // Seller׳s name 
-        new Tag(2, trim($xml->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText())), // VAT registration number of the seller
-        new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
-        new Tag(4, trim($xml->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText())), //Invoice total (with VAT)
-        new Tag(5, trim($xml->get("cac:TaxTotal")->asText())), // VAT total
-        new Tag(6, base64_encode($invoiceHashBinary)), //Hash of XML invoice
-        new Tag(7, $digitalSignature), // ECDSA signature
-        new Tag(8, base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
-    ];
-    
-    
-    /**
-     * For Simplified Tax Invoices and their associated notes, the ECDSA signature of the cryptographic stamp’s public key by ZATCA’s technical CA
-     * @link https://zatca.gov.sa/ar/E-Invoicing/SystemsDevelopers/Documents/20220624_ZATCA_ElectronicE-invoicing_Detailed_Technical_Guidelines.pdf page 61
-     */
-    
-    $startOfInvoiceTypeCode = $xml->get("cbc:InvoiceTypeCode");
-    $isSimplified = $startOfInvoiceTypeCode && strpos($startOfInvoiceTypeCode->element()->getAttribute('name'), "02") === 0;
-    
-    if ($isSimplified) {
-        $qrArray = array_merge($qrArray, [new Tag(9, $certificate->getCertificateSignature())]);
-    }
-    
-    $QRCodeAsBase64 = GenerateQrCode::fromArray($qrArray)->toBase64();
-
-    //$QRCodeAsBase64 output will be like this 
-    //AQ1TYWxsYSAtIFNhbGxhAg8zMTA0NjE0MzU3MDAwMDMDFDIwMjMtMTItMzFUMjE6MDA6MDBaBAY0MDguNjkFBTUzLjMxBiw1TXZmVmZTWGRSZzgyMWU4Q0E3bE1WcDdNS1J4Q2FBWWZHTm90THlHNUg4PQdgTUVRQ0lEOGthSTF1Z29EcWJkN3NEVmFCVE9yOUswWlVwRkZNY2hON2FsNGgyTEhrQWlCYnZxZktkK0xaN0hEc0FMakxmeTA0dTBMNVRhcjhxenowYjBlb0EzMUtIdz09CFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAATmBleqoCAfxDveLQVAKCvHSjNxoudWhRNQ8zThTxzBtgjAqZQ7vBJWvu2Ut0MxYa8vq7O4tgusgmcLBDhK/xNCCUcwRQIhAIhuJ6o4ETNSosMEf/OLVbp+TZqi2IGSxsgyC54yZgQAAiB3lwym6zpkPspQrT+luMte/ifw4THG+waV+SmXNSukmQ==
-```
-
 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -248,10 +217,10 @@ The team is always here to help you. Happen to face an issue? Want to report a b
 
 ## Contributing
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. 
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create.
 Any contributions you make are **greatly appreciated**.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. 
+If you have a suggestion that would make this better, please fork the repo and create a pull request.
 You can also simply open an issue with the tag "enhancement". Don't forget to give the project a star! Thanks again!
 
 1. Fork the Project

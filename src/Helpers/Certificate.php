@@ -18,12 +18,12 @@ class Certificate
     protected string $plain_certificate;
 
     /**
-     * @var \phpseclib3\File\X509
+     * @var X509
      */
     protected X509 $certificate;
 
     /**
-     * @var \phpseclib3\Crypt\Common\PrivateKey
+     * @var PrivateKey
      */
     protected PrivateKey $privateKey;
 
