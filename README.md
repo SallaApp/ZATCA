@@ -152,23 +152,10 @@ $generatedString = GenerateQrCode::fromArray([
     new InvoiceDate('2021-07-12T14:25:09Z'), // invoice date as Zulu ISO8601 @see https://en.wikipedia.org/wiki/ISO_8601
     new InvoiceTotalAmount('100.00'), // invoice total amount
     new InvoiceTaxAmount('15.00') // invoice tax amount
+    // .....
 ])->toTLV();
-```
-<p align="right">(<a href="#top">back to top</a>)</p>
 
-### Render A QR Code Image
-
-You can render the tags as QR code image easily
-
-
-```php
-use Salla\ZATCA\GenerateQrCode;
-use Salla\ZATCA\Tags\InvoiceDate;
-use Salla\ZATCA\Tags\InvoiceTaxAmount;
-use Salla\ZATCA\Tags\InvoiceTotalAmount;
-use Salla\ZATCA\Tags\Seller;
-use Salla\ZATCA\Tags\TaxNumber;
-
+// Render A QR Code Image
 // data:image/png;base64, .........
 $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
     new Seller('Salla'), // seller name        
@@ -176,14 +163,12 @@ $displayQRCodeAsBase64 = GenerateQrCode::fromArray([
     new InvoiceDate('2021-07-12T14:25:09Z'), // invoice date as Zulu ISO8601 @see https://en.wikipedia.org/wiki/ISO_8601
     new InvoiceTotalAmount('100.00'), // invoice total amount
     new InvoiceTaxAmount('15.00') // invoice tax amount
+    // .......
 ])->render();
 
 // now you can inject the output to src of html img tag :)
 // <img src="$displayQRCodeAsBase64" alt="QR Code" />
 ```
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -196,12 +181,6 @@ If you are interested to see the output of your final QR-Code Image, you can use
 
 ![image](https://user-images.githubusercontent.com/10876587/142364186-f7d5b523-07fc-4776-8b96-9a75f4a455d1.png)
 
-
-## TODO
-
-We'll continue work on this package until support the whole cycle of QR code implementation.
-
-- [ ] Support the digital signature for the QR code.
 
 ## Testing
 
