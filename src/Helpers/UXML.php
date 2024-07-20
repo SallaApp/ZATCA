@@ -325,6 +325,7 @@ class UXML
      *
      * @param Certificate $certificate
      * @param string $invoiceHash the base64 encoded string of the binary invoice hash
+     * @param string $digitalSignature 
      * @return array
      */
     public function toTagsArray(Certificate $certificate, string $invoiceHash, string $digitalSignature): array
