@@ -106,16 +106,27 @@ use Salla\ZATCA\GenerateQrCode;
 use Salla\ZATCA\Helpers\UXML;
 use Salla\ZATCA\Helpers\Certificate;
 
-$xmlInvoice = 'xml invoice text';
-
-$certificate = (new Certificate(
-    'certificate plain text (base64 decoded)', // get from ZATCA when you exchange the CSR via APIs
-    'private key plain text' // generated at stage one
-))->setSecretKey('secret key text'); // get from ZATCA when you exchange the CSR via APIs
-
-$tags = UXML::fromString($xmlInvoice)->toTagsArray($certificate);
-
-$QRCodeAsBase64 = GenerateQrCode::fromArray($tags)->toBase64();
+    $xmlInvoice = 'xml invoice text';
+    
+    $certificate = (new Certificate(
+        'certificate plain text (base64 decoded)', // get from ZATCA when you exchange the CSR via APIs
+        'private key plain text' // generated at stage one
+    ))->setSecretKey('secret key text'); // get from ZATCA when you exchange the CSR via APIs
+    
+    $xml = UXML::fromString($xmlInvoice);
+    $xml->removeByXpath('ext:UBLExtensions');
+    $xml->removeByXpath('cac:Signature');
+    $xml->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+    
+    $invoiceHashBinary = hash('sha256', $xml->element()->C14N(false, false), true);
+    
+    $invoiceHash = base64_encode($invoiceHashBinary);
+    
+    $digitalSignature = base64_encode($certificate->getPrivateKey()->sign($invoiceHashBinary));
+    
+    $tags = UXML::fromString($xmlInvoice)->toTagsArray($certificate, $invoiceHash, $digitalSignature);
+    
+    $QRCodeAsBase64 = GenerateQrCode::fromArray($tags)->toBase64();
 
 //$QRCodeAsBase64 output will be like this
 //AQ1TYWxsYSAtIFNhbGxhAg8zMTA0NjE0MzU3MDAwMDMDFDIwMjMtMTItMzFUMjE6MDA6MDBaBAY0MDguNjkFBTUzLjMxBiw1TXZmVmZTWGRSZzgyMWU4Q0E3bE1WcDdNS1J4Q2FBWWZHTm90THlHNUg4PQdgTUVRQ0lEOGthSTF1Z29EcWJkN3NEVmFCVE9yOUswWlVwRkZNY2hON2FsNGgyTEhrQWlCYnZxZktkK0xaN0hEc0FMakxmeTA0dTBMNVRhcjhxenowYjBlb0EzMUtIdz09CFgwVjAQBgcqhkjOPQIBBgUrgQQACgNCAATmBleqoCAfxDveLQVAKCvHSjNxoudWhRNQ8zThTxzBtgjAqZQ7vBJWvu2Ut0MxYa8vq7O4tgusgmcLBDhK/xNCCUcwRQIhAIhuJ6o4ETNSosMEf/OLVbp+TZqi2IGSxsgyC54yZgQAAiB3lwym6zpkPspQrT+luMte/ifw4THG+waV+SmXNSukmQ==

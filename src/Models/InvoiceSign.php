@@ -90,12 +90,12 @@ class InvoiceSign
     private function generateQRCode(): string
     {
         return GenerateQrCode::fromArray(
-            $this->xmlDom->toTagsArray($this->certificate, $this->invoiceHash)
+            $this->xmlDom->toTagsArray($this->certificate, $this->invoiceHash, $this->digitalSignature)
         )->toBase64();
     }
 
     /**
-     * Dont edit this string , will effect the signature of invoice
+     * Don't edit this string , will affect the signature of invoice
      * @param string $QRCode
      * @return string
      */

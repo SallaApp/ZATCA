@@ -324,17 +324,11 @@ class UXML
      * Generate Tags array for QR generation base in the current invoice xml
      *
      * @param Certificate $certificate
-     * @param string|null $invoiceHash the base64 encoded string of the binary invoice hash
+     * @param string $invoiceHash the base64 encoded string of the binary invoice hash
      * @return array
      */
-    public function toTagsArray(Certificate $certificate, ?string $invoiceHash): array
+    public function toTagsArray(Certificate $certificate, string $invoiceHash, string $digitalSignature): array
     {
-        if (!$invoiceHash) {
-            $invoiceHash = $this->getXmlHash();
-        }
-
-        $digitalSignature = base64_encode($certificate->getPrivateKey()->sign(base64_decode($invoiceHash)));
-
         $issueDate = $this->get("cbc:IssueDate")->asText();
         $issueTime = $this->get("cbc:IssueTime")->asText();
         $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
@@ -362,30 +356,6 @@ class UXML
         }
 
         return $qrArray;
-    }
-
-    /**
-     * Generate invoice hash for the current xml as base64 encoded.
-     *
-     * @return string
-     */
-    public function getXmlHash(): string
-    {
-        $clonedXML = clone $this;
-
-        /**
-         * remove unwanted tags
-         *
-         * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
-         * @link page 53
-         */
-        $clonedXML->removeByXpath('ext:UBLExtensions');
-        $clonedXML->removeByXpath('cac:Signature');
-        $clonedXML->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
-
-        return base64_encode(
-            hash('sha256', $clonedXML->element()->C14N(false, false), true)
-        );
     }
 
     /**
