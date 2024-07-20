@@ -359,7 +359,7 @@ class UXML
         return $qrArray;
     }
 
-    
+
     /**
      * @inheritdoc
      */
