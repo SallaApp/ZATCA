@@ -18,8 +18,16 @@
 
 ## Requirements
 
-* PHP >= 7.2
-* An mbstring extension
+* PHP >= 8.0
+* A mbstring extension
+* An ext-dom extension
+
+
+### Dependencies
+* "robrichards/xmlseclibs": "^3.1",
+* "josemmo/uxml": "^0.1.4",
+* "chillerlan/php-qrcode": "^4.3",
+* "phpseclib/phpseclib": "~3.0"
 
 ## Installation
 
