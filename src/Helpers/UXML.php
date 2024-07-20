@@ -325,15 +325,18 @@ class UXML
      *
      * @param Certificate $certificate
      * @param string|null $invoiceHash the base64 encoded string of the binary invoice hash
+     * @param string|null $digitalSignature the digital signature for the invoice hash
      * @return array
      */
-    public function toTagsArray(Certificate $certificate, ?string $invoiceHash): array
+    public function toTagsArray(Certificate $certificate, ?string $invoiceHash, ?string $digitalSignature): array
     {
         if (!$invoiceHash) {
             $invoiceHash = $this->getXmlHash();
         }
 
-        $digitalSignature = base64_encode($certificate->getPrivateKey()->sign(base64_decode($invoiceHash)));
+        if (!$digitalSignature) {
+            $digitalSignature = base64_encode($certificate->getPrivateKey()->sign(base64_decode($invoiceHash)));
+        }
 
         $issueDate = $this->get("cbc:IssueDate")->asText();
         $issueTime = $this->get("cbc:IssueTime")->asText();
