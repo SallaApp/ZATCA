@@ -359,21 +359,7 @@ class UXML
         return $qrArray;
     }
 
-    private function getHashBinary(): string
-    {
-        /**
-         * remove unwanted tags
-         *
-         * @link https://zatca.gov.sa/ar/E-Invoicing/Introduction/Guidelines/Documents/E-invoicing%20Detailed%20Technical%20Guidelines.pdf
-         * @link page 53
-         */
-        $this->removeByXpath('ext:UBLExtensions');
-        $this->removeByXpath('cac:Signature');
-        $this->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
-
-        return hash('sha256', $this->element()->C14N(false, false), true);
-    }
-
+    
     /**
      * @inheritdoc
      */
