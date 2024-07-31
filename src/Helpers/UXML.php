@@ -7,7 +7,15 @@ use DOMElement;
 use DOMException;
 use DOMXPath;
 use InvalidArgumentException;
-use Salla\ZATCA\Tag;
+use Salla\ZATCA\Tags\CertificateSignature;
+use Salla\ZATCA\Tags\InvoiceDate;
+use Salla\ZATCA\Tags\InvoiceDigitalSignature;
+use Salla\ZATCA\Tags\InvoiceHash;
+use Salla\ZATCA\Tags\InvoiceTaxAmount;
+use Salla\ZATCA\Tags\InvoiceTotalAmount;
+use Salla\ZATCA\Tags\PublicKey;
+use Salla\ZATCA\Tags\Seller;
+use Salla\ZATCA\Tags\TaxNumber;
 use WeakMap;
 
 use function class_exists;
@@ -343,14 +351,14 @@ class UXML
         $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
 
         $qrArray = [
-            new Tag(1, $this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText()), // Seller׳s name
-            new Tag(2, $this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()), // VAT registration number of the seller
-            new Tag(3, $issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
-            new Tag(4, $this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()), //Invoice total (with VAT)
-            new Tag(5, $this->get("cac:TaxTotal")->asText()), // VAT total
-            new Tag(6, $invoiceHash), // Hash of XML invoice
-            new Tag(7, $digitalSignature), // ECDSA signature
-            new Tag(8, base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
+            new Seller($this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText()), // Seller׳s name
+            new TaxNumber($this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()), // VAT registration number of the seller
+            new InvoiceDate($issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
+            new InvoiceTotalAmount($this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()), //Invoice total (with VAT)
+            new InvoiceTaxAmount($this->get("cac:TaxTotal")->asText()), // VAT total
+            new InvoiceHash($invoiceHash), // Hash of XML invoice
+            new InvoiceDigitalSignature($digitalSignature), // ECDSA signature
+            new PublicKey(base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
         ];
 
         /**
@@ -361,7 +369,7 @@ class UXML
         $isSimplified = $startOfInvoiceTypeCode && str_starts_with($startOfInvoiceTypeCode->element()->getAttribute('name'), "02");
 
         if ($isSimplified) {
-            $qrArray = array_merge($qrArray, [new Tag(9, $certificate->getCertificateSignature())]);
+            $qrArray = array_merge($qrArray, [new CertificateSignature($certificate->getCertificateSignature())]);
         }
 
         return $qrArray;
