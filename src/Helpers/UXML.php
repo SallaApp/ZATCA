@@ -355,7 +355,7 @@ class UXML
             new TaxNumber($this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()), // VAT registration number of the seller
             new InvoiceDate($issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
             new InvoiceTotalAmount($this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()), //Invoice total (with VAT)
-            new InvoiceTaxAmount($this->get("cac:TaxTotal")->asText()), // VAT total
+            new InvoiceTaxAmount($this->get("cac:TaxTotal/cbc:TaxAmount")->asText()), // VAT total
             new InvoiceHash($invoiceHash), // Hash of XML invoice
             new InvoiceDigitalSignature($digitalSignature), // ECDSA signature
             new PublicKey(base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
