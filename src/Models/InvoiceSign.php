@@ -30,8 +30,8 @@ class InvoiceSign
 
     public function __construct(string $xmlInvoice, Certificate $certificate)
     {
-        $this->certificate = $certificate;
         $this->xmlInvoice = $xmlInvoice;
+        $this->certificate = $certificate;
     }
 
     public function sign(): Invoice
