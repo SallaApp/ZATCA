@@ -33,7 +33,7 @@ class UblExtension
      */
     public function populateUblSignature(): string
     {
-        $signingTime = date('Y-m-d') . 'T' . date('H:m:s');
+        $signingTime = gmdate("Y-m-d") . 'T' . gmdate("H:i:s") . 'Z';
 
         $signedProprietiesXml = $this->buildSignedProperties($signingTime);
 
