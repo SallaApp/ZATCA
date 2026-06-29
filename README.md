@@ -189,8 +189,22 @@ If you are interested to see the output of your final QR-Code Image, you can use
 ## Testing
 
 ```bash
-composer test
+composer install
+composer test   # runs: phpunit
 ```
+
+> This is a pure PHP composer library — there is no `artisan` command. Do not use `php artisan test`.
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+## Contributing (Salla internal)
+
+Follow the branch naming and PR title conventions in the workspace `CLAUDE.md`:
+- Branch: `feature/ZATCA-<ticket>-description` or `bugfix/ZATCA-<ticket>-description`
+- PR title: `feat(ZATCA-123): …` / `fix(ZATCA-123): …`
+- Every PR body must include the Jira link `https://salla.atlassian.net/browse/<KEY>`.
+- Do **not** push directly to `master`.
+
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Support
@@ -198,7 +212,7 @@ composer test
 The team is always here to help you. Happen to face an issue? Want to report a bug? You can submit one here on Github using the [Issue Tracker](https://github.com/SallaApp/Salla-CLI/issues/new). If you still have any questions, please contact us by joining the Salla Global Developer Community on [Telegram](https://t.me/salladev) or via the [Support Email](mailto:support@salla.dev)
 
 
-## Contributing
+## Contributing (external / open-source)
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create.
 Any contributions you make are **greatly appreciated**.

@@ -1,0 +1,66 @@
+{
+  "comment": "Automated review by Greptile — see CLAUDE.md for repo context",
+  "strictness": 2,
+  "triggerOnUpdates": true,
+  "statusCheck": true,
+  "commentTypes": ["logic", "syntax"],
+  "ignorePatterns": [
+    "*.lock",
+    "vendor/**",
+    "composer.phar",
+    ".idea/**",
+    ".DS_Store"
+  ],
+  "directoryRules": {
+    "src/**": {
+      "strictness": 1,
+      "commentTypes": ["logic", "syntax"],
+      "instructions": "Core library consumed by services/Core and services/zatca-einvoicing. Focus on: (1) backward-compatible public API (GenerateQrCode, GenerateCSR, InvoiceSign, Certificate, Tag subtypes); (2) correct ZATCA TLV encoding and C14N hashing; (3) OpenSSL EC key operations; (4) input validation (UID format, country code length, invoice type bitmask). Any change to tag numbering or QR encoding format will silently break ZATCA compliance."
+    },
+    "src/Tags/**": {
+      "strictness": 1,
+      "commentTypes": ["logic", "syntax"],
+      "instructions": "Each Tag subclass defines a fixed ZATCA TLV tag number. Tag numbers must never change — they are part of the ZATCA QR spec. Verify getValue() returns raw bytes (not base64 re-encoded). Tag 9 (CertificateSignature) is only added for simplified invoices."
+    },
+    "src/Helpers/**": {
+      "strictness": 1,
+      "commentTypes": ["logic", "syntax"],
+      "instructions": "UXML.toTagsArray() and InvoiceSign.sign() implement the ZATCA Phase 2 signing flow. Any mutation to C14N computation, UBL node removal order, or signature construction will produce invoices that fail ZATCA validation. Test against tests/simplified_invoice.xml."
+    },
+    "tests/**": {
+      "strictness": 3,
+      "commentTypes": ["logic"],
+      "instructions": "Tests — flag only critical logic errors or incorrect test fixture usage."
+    }
+  },
+  "customContext": {
+    "rules": [
+      {
+        "rule": "No hardcoded secrets — private keys, certificates, and ZATCA API credentials must come from env vars or Doppler, never from source files.",
+        "scope": ["**"]
+      },
+      {
+        "rule": "Public API backward compatibility is mandatory: GenerateQrCode::fromArray(), GenerateCSR::fromRequest(), InvoiceSign::sign(), and all Tag constructors are consumed by services/Core and services/zatca-einvoicing. Changing method signatures or return types is a breaking change.",
+        "scope": ["src/**"]
+      },
+      {
+        "rule": "All CSRRequest setters must validate inputs and throw CSRValidationException (not generic exceptions) for ZATCA-specific format violations (UID 15-digit rule, country code 2-char rule, OrgUnit 10-digit rule for group taxpayers).",
+        "scope": ["src/Models/**"]
+      },
+      {
+        "rule": "The currentEnv field on CSRRequest controls which OID is embedded in the OpenSSL config. Ensure any new environment values map to the correct ZATCA OID string.",
+        "scope": ["src/**"]
+      }
+    ],
+    "files": [
+      { "path": "CLAUDE.md", "scope": ["**"] },
+      { "path": "README.md", "scope": ["**"] }
+    ],
+    "other": [
+      {
+        "context": "salla/zatca is a PHP library (no Laravel, no artisan) implementing the Saudi ZATCA e-invoicing standard. It is consumed by services/Core and services/zatca-einvoicing. The library covers Phase 1 (TLV QR from a Tag array) and Phase 2 (EC CSR generation + UBL XML invoice signing). Changes to public entrypoints ripple to both consumer repos.",
+        "scope": ["**"]
+      }
+    ]
+  }
+}
