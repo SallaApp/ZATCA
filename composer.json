@@ -27,7 +27,7 @@
         "ext-mbstring": "*",
         "ext-dom": "*",
         "robrichards/xmlseclibs": "^3.1",
-        "josemmo/uxml": "^0.1.4",
+        "josemmo/uxml": "^0.1.4 || ^0.2.0",
         "chillerlan/php-qrcode": "^4.3",
         "phpseclib/phpseclib": "~3.0"
     },
