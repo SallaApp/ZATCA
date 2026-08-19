@@ -7,7 +7,7 @@ A PHP composer library (`salla/zatca`) that implements ZATCA (Fatoora) e-invoici
 - `phpseclib/phpseclib ~3.0` — EC key handling and X.509 certificate parsing
 - `robrichards/xmlseclibs ^3.1` — XML digital signature support
 - `josemmo/uxml ^0.1.4` — UBL XML parsing/manipulation
-- `chillerlan/php-qrcode ^4.3` — QR code image rendering
+- `chillerlan/php-qrcode ^5.0` — QR code image rendering
 - `phpunit/phpunit ~8.0` (dev)
 
 ## Run / test / build
