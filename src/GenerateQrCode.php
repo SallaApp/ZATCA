@@ -2,6 +2,7 @@
 
 namespace Salla\ZATCA;
 
+use chillerlan\QRCode\Output\QROutputInterface;
 use chillerlan\QRCode\QRCode;
 use InvalidArgumentException;
 use chillerlan\QRCode\QROptions;
@@ -74,7 +75,16 @@ class GenerateQrCode
      */
     public function render(array $options = [], ?string $file = null): string
     {
+        if (!isset($options['outputType']) && !isset($options['outputInterface'])) {
+            $options['outputType'] = QROutputInterface::GDIMAGE_PNG;
+        }
+
+        if (!isset($options['imageTransparent'])) {
+            $options['imageTransparent'] = true;
+        }
+
         $options = new QROptions($options);
+
         return (new QRCode($options))->render($this->toBase64(), $file);
     }
 }
