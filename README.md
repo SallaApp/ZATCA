@@ -66,7 +66,7 @@ openssl_pkey_export_to_file($CSR->getPrivateKey(), 'output file path name');
 file_put_contents('output file path name', $CSR->getCsrContent());
 ````
 
-At this stage you need to share the CSR to the ZATCA via APIs to get the certification for the current merchant
+At this stage, you need to encode the CSR with base64_encode method and share with ZATCA via APIs to get the certification for the current merchant
 
 ### Signing Invoices & Generate QA code
 
