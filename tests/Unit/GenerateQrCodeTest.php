@@ -82,4 +82,123 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
 
         GenerateQrCode::fromArray([null])->toBase64();
     }
+
+    /**
+     * A 128 character Arabic seller name is 256 bytes in UTF-8, which does not
+     * fit in the single length byte ZATCA allows.
+     *
+     * @test
+     */
+    public function shouldThrowWhenTheValueIsTooLongForTheLengthByte()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        (string) new Tag(1, str_repeat('a', 256));
+    }
+
+    /**
+     * @test
+     */
+    public function shouldEncodeTheLengthInASingleByteUpToTheLimit()
+    {
+        foreach ([0, 1, 127, 128, 200, 255] as $length) {
+            $tag = (string) new Tag(1, str_repeat('a', $length));
+
+            $this->assertEquals($length + 2, strlen($tag));
+            $this->assertEquals($length, ord($tag[1]));
+        }
+    }
+
+    /**
+     * A 138 byte Arabic trade name has 0x8A as its length byte. That is a
+     * plain unsigned 8-bit 138, not a BER multi byte prefix, so it round trips.
+     *
+     * @test
+     */
+    public function shouldEncodeALongArabicSellerName()
+    {
+        $name = 'مؤسسة التقنية المتقدمة للتجارة والمقاولات العامة بالمنطقة الوسطى المحدودة';
+
+        $this->assertEquals(138, strlen($name));
+
+        $tag = (string) new Tag(1, $name);
+
+        $this->assertEquals(0x8A, ord($tag[1]));
+        $this->assertEquals($name, substr($tag, 2));
+    }
+
+    /**
+     * The tag id and the value length are both written as one byte, so the
+     * error has to say which of the two was out of range.
+     *
+     * @test
+     */
+    public function shouldReportWhichByteWasOutOfRange()
+    {
+        try {
+            (string) new Tag(256, 'a');
+            $this->fail('an out of range tag id should throw');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('Tag id 256 is out of range', $e->getMessage());
+        }
+
+        try {
+            (string) new Tag(1, str_repeat('a', 256));
+            $this->fail('an oversized value should throw');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('the value is 256 bytes', $e->getMessage());
+        }
+    }
+
+    /**
+     * getLength() must measure whatever __toString() actually writes. A
+     * subclass that overrides getValue() previously made the declared length
+     * disagree with the bytes emitted, which misaligns every following tag.
+     *
+     * @test
+     */
+    public function shouldMeasureTheValueItActuallyWrites()
+    {
+        $tag = new class(1, '  hi  ') extends Tag
+        {
+            public function getValue()
+            {
+                return trim(parent::getValue());
+            }
+        };
+
+        $encoded = (string) $tag;
+
+        $this->assertEquals(2, ord($encoded[1]));
+        $this->assertEquals('hi', substr($encoded, 2));
+        $this->assertEquals(strlen($encoded) - 2, ord($encoded[1]));
+    }
+
+    /**
+     * __toString() must measure the exact string it writes. A getValue() that
+     * returns something different on each call previously had its length taken
+     * from a second call, so the declared length described one string while
+     * another was emitted, misaligning every following tag.
+     *
+     * @test
+     */
+    public function shouldMeasureTheSameCallItWrites()
+    {
+        $tag = new class(1, 'ignored') extends Tag
+        {
+            private $calls = 0;
+
+            public function getValue()
+            {
+                // longer on the first call, shorter on the next
+                return str_repeat('x', 10 - (2 * $this->calls++));
+            }
+        };
+
+        $encoded = (string) $tag;
+        $declared = ord($encoded[1]);
+        $written = strlen($encoded) - 2;
+
+        $this->assertEquals($written, $declared, 'the length byte must match the bytes emitted');
+    }
 }
