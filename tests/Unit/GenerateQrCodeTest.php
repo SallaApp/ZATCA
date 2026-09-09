@@ -172,4 +172,32 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('hi', substr($encoded, 2));
         $this->assertEquals(strlen($encoded) - 2, ord($encoded[1]));
     }
+
+    /**
+     * __toString() must measure the exact string it writes. A getValue() that
+     * returns something different on each call previously had its length taken
+     * from a second call, so the declared length described one string while
+     * another was emitted, misaligning every following tag.
+     *
+     * @test
+     */
+    public function shouldMeasureTheSameCallItWrites()
+    {
+        $tag = new class(1, 'ignored') extends Tag
+        {
+            private $calls = 0;
+
+            public function getValue()
+            {
+                // longer on the first call, shorter on the next
+                return str_repeat('x', 10 - (2 * $this->calls++));
+            }
+        };
+
+        $encoded = (string) $tag;
+        $declared = ord($encoded[1]);
+        $written = strlen($encoded) - 2;
+
+        $this->assertEquals($written, $declared, 'the length byte must match the bytes emitted');
+    }
 }

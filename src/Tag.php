@@ -66,7 +66,7 @@ class Tag
     {
         $value = (string) $this->getValue();
 
-        return $this->toTagByte().$this->toLengthByte().($value);
+        return $this->toTagByte().$this->toLengthByte($value).($value);
     }
 
     /**
@@ -94,13 +94,19 @@ class Tag
     /**
      * To convert the length of the value to a single unsigned byte.
      *
+     * @param  string  $value  The exact string being written.
+     *
      * @return string
      *
      * @throws InvalidArgumentException
      */
-    protected function toLengthByte()
+    protected function toLengthByte($value)
     {
-        $length = $this->getLength();
+        // Measured from the string __toString() is about to emit, not from a
+        // second getValue() call: an override that is not idempotent would
+        // otherwise declare a length for one string and write another,
+        // misaligning every tag that follows.
+        $length = strlen($value);
 
         if ($length > self::MAX_LENGTH) {
             throw new InvalidArgumentException(sprintf(
