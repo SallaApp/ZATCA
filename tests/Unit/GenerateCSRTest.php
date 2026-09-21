@@ -3,6 +3,7 @@
 
 namespace Salla\ZATCA\Test\Unit;
 
+use PHPUnit\Framework\Attributes\Test;
 use OpenSSLAsymmetricKey;
 use phpseclib3\Crypt\EC;
 use phpseclib3\File\X509;
@@ -11,7 +12,7 @@ use Salla\ZATCA\Models\CSRRequest;
 
 class GenerateCSRTest extends \PHPUnit\Framework\TestCase
 {
-    /** @test */
+    #[Test]
     public function shouldGenerateACsrWithProperiteis()
     {
         $CN                     = 'Salla';
