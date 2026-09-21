@@ -3,6 +3,7 @@
 
 namespace Salla\ZATCA\Test\Unit;
 
+use PHPUnit\Framework\Attributes\Test;
 use phpseclib3\File\X509;
 use Salla\ZATCA\Helpers\Certificate;
 use Salla\ZATCA\Models\InvoiceSign;
@@ -13,7 +14,7 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
     protected const PRIVATE_KEY   = 'MHQCAQEEIP0tXvA0mhzTBgjZaAGt+V3tWIr79nG/gs56jKFJb6gboAcGBSuBBAAKoUQDQgAE+39UxFUCaF5p51RTvwXL+YODEpITlTdI27S72pSPJEAjQs2jBb1sLS/xg8/y5555+d19KoLmLo6gMrxvINXaHw==';
     protected const SERIAL_NUMBER = '379112742831380471835263969587287663520528387';
 
-    /** @test */
+    #[Test]
     public function isValidCertificate()
     {
         $x509 = new X509();
@@ -30,7 +31,7 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
 
     }
 
-    /** @test */
+    #[Test]
     public function canGeneratInvoiceHash()
     {
         $xmlInvoice = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
