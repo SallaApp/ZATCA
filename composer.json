@@ -23,7 +23,7 @@
     },
     "minimum-stability": "stable",
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.0",
         "ext-mbstring": "*",
         "ext-dom": "*",
         "robrichards/xmlseclibs": "^3.1",
