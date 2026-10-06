@@ -1,0 +1,36 @@
+name: Unit Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [master]
+
+jobs:
+  aggregate-tests:
+    name: Testing Ready
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    needs: unit-tests
+    steps:
+      - run: echo "Testing Ready"
+
+  unit-tests:
+    name: "Unit Tests (PHP ${{ matrix.php }})"
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.1", "8.2", "8.3"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, dom, gd, openssl
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: vendor/bin/phpunit
