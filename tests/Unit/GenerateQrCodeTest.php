@@ -85,9 +85,8 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
     /**
      * A 128 character Arabic seller name is 256 bytes in UTF-8, which does not
      * fit in the single length byte ZATCA allows.
-     *
-     * @test
      */
+    #[Test]
     public function shouldThrowWhenTheValueIsTooLongForTheLengthByte()
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -95,9 +94,7 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
         (string) new Tag(1, str_repeat('a', 256));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldEncodeTheLengthInASingleByteUpToTheLimit()
     {
         foreach ([0, 1, 127, 128, 200, 255] as $length) {
@@ -111,9 +108,8 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
     /**
      * A 138 byte Arabic trade name has 0x8A as its length byte. That is a
      * plain unsigned 8-bit 138, not a BER multi byte prefix, so it round trips.
-     *
-     * @test
      */
+    #[Test]
     public function shouldEncodeALongArabicSellerName()
     {
         $name = 'مؤسسة التقنية المتقدمة للتجارة والمقاولات العامة بالمنطقة الوسطى المحدودة';
@@ -129,9 +125,8 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
     /**
      * The tag id and the value length are both written as one byte, so the
      * error has to say which of the two was out of range.
-     *
-     * @test
      */
+    #[Test]
     public function shouldReportWhichByteWasOutOfRange()
     {
         try {
@@ -153,9 +148,8 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
      * getLength() must measure whatever __toString() actually writes. A
      * subclass that overrides getValue() previously made the declared length
      * disagree with the bytes emitted, which misaligns every following tag.
-     *
-     * @test
      */
+    #[Test]
     public function shouldMeasureTheValueItActuallyWrites()
     {
         $tag = new class(1, '  hi  ') extends Tag
@@ -178,9 +172,8 @@ class GenerateQrCodeTest extends \PHPUnit\Framework\TestCase
      * returns something different on each call previously had its length taken
      * from a second call, so the declared length described one string while
      * another was emitted, misaligning every following tag.
-     *
-     * @test
      */
+    #[Test]
     public function shouldMeasureTheSameCallItWrites()
     {
         $tag = new class(1, 'ignored') extends Tag
