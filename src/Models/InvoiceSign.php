@@ -3,6 +3,9 @@
 
 namespace Salla\ZATCA\Models;
 
+use DOMDocument;
+use DOMXPath;
+use InvalidArgumentException;
 use Salla\ZATCA\GenerateQrCode;
 use Salla\ZATCA\Helpers\Certificate;
 use Salla\ZATCA\Helpers\UblExtension;
@@ -50,6 +53,8 @@ class InvoiceSign
 
         $invoiceHashBinary = hash('sha256', $this->xmlDom->element()->C14N(false, false), true);
 
+        $this->assertSingleton($this->xmlDom->element()->ownerDocument, ['cbc:ProfileID', 'cac:AccountingSupplierParty']);
+
         $this->invoiceHash = base64_encode($invoiceHashBinary);
 
         /**
@@ -79,12 +84,41 @@ class InvoiceSign
             ], $this->xmlDom->asXML());
 
         // after replace we want to remove any blank line from invoice.
+        $signedInvoice = preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice);
+
+        $signedDoc = new DOMDocument();
+        if (!$signedDoc->loadXML($signedInvoice)) {
+            throw new InvalidArgumentException('Signed invoice is not valid XML');
+        }
+        $this->assertSingleton($signedDoc, ['ext:UBLExtensions', 'cac:Signature', 'cbc:ProfileID', 'cac:AccountingSupplierParty']);
+        $this->assertSingleton($signedDoc, ['cac:AdditionalDocumentReference[cbc:ID="QR"]']);
+
         return new \Salla\ZATCA\Models\Invoice(
-            preg_replace('/^[ \t]*[\r\n]+/m', '', $signedInvoice),
+            $signedInvoice,
             $this->invoiceHash,
             $QRCode,
             $this->certificate
         );
+    }
+
+    /**
+     * Each element must occur exactly once as a direct child of the invoice root.
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertSingleton(DOMDocument $doc, array $paths): void
+    {
+        $xpath = new DOMXPath($doc);
+        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $xpath->registerNamespace('ext', 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
+
+        foreach ($paths as $path) {
+            $count = $xpath->query('/*/' . $path)->length;
+            if ($count !== 1) {
+                throw new InvalidArgumentException("Invoice must contain exactly one <$path> element, found $count");
+            }
+        }
     }
 
     private function generateQRCode(): string
