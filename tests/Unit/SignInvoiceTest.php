@@ -55,4 +55,57 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         // $this->assertStringContainsString($certificate->getCertificateSignature(),base64_decode($signInfo->getQRCode()));
     }
 
+    private function signXml(string $xml)
+    {
+        return (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign();
+    }
+
+    #[Test]
+    public function signedInvoiceHasExactlyOneOfEachSignatureNode()
+    {
+        $signed = $this->signXml(file_get_contents(__DIR__ . '/files/simplified_invoice.xml'))->getInvoice();
+
+        $doc = new \DOMDocument();
+        $doc->loadXML($signed);
+        $xpath = new \DOMXPath($doc);
+        $xpath->registerNamespace('cbc', 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2');
+        $xpath->registerNamespace('cac', 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2');
+        $xpath->registerNamespace('ext', 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2');
+
+        $this->assertSame(1, $xpath->query('/*/ext:UBLExtensions')->length);
+        $this->assertSame(1, $xpath->query('/*/cac:Signature')->length);
+        $this->assertSame(1, $xpath->query('/*/cac:AdditionalDocumentReference[cbc:ID="QR"]')->length);
+    }
+
+    #[Test]
+    public function rejectsDuplicateProfileId()
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $xml = preg_replace('#<cbc:ProfileID>.*?</cbc:ProfileID>#s', '$0$0', $xml, 1);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('cbc:ProfileID');
+        $this->signXml($xml);
+    }
+
+    #[Test]
+    public function rejectsDuplicateAccountingSupplierParty()
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $xml = preg_replace('#<cac:AccountingSupplierParty>.*?</cac:AccountingSupplierParty>#s', '$0$0', $xml, 1);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('cac:AccountingSupplierParty');
+        $this->signXml($xml);
+    }
+
+    #[Test]
+    public function rejectsMissingProfileId()
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $xml = preg_replace('#<cbc:ProfileID>.*?</cbc:ProfileID>#s', '', $xml, 1);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->signXml($xml);
+    }
 }
