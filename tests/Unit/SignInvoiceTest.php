@@ -55,4 +55,40 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         // $this->assertStringContainsString($certificate->getCertificateSignature(),base64_decode($signInfo->getQRCode()));
     }
 
+    private function signWith(?string $note): \Salla\ZATCA\Models\Invoice
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        if ($note !== null) {
+            $xml = preg_replace('/<cbc:ID>118<\/cbc:ID>/', '<cbc:ID>118</cbc:ID>' . "\n    " . '<cbc:Note>' . $note . '</cbc:Note>', $xml, 1);
+        }
+
+        return (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign();
+    }
+
+    private function recomputeHash(string $signedXml): string
+    {
+        $dom = \Salla\ZATCA\Helpers\UXML::fromString($signedXml);
+        $dom->removeByXpath('ext:UBLExtensions');
+        $dom->removeByXpath('cac:Signature');
+        $dom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+
+        return base64_encode(hash('sha256', $dom->element()->C14N(false, false), true));
+    }
+
+    #[Test]
+    public function baselineHashMatchesReturnedXml()
+    {
+        $signed = $this->signWith(null);
+
+        $this->assertSame($signed->getHash(), $this->recomputeHash($signed->getInvoice()));
+    }
+
+    #[Test]
+    public function blankLineInTextNodeIsPreservedAndHashMatches()
+    {
+        $signed = $this->signWith("line1\n\nline2\n  \nline3");
+
+        $this->assertStringContainsString("line1\n\nline2\n  \nline3", $signed->getInvoice());
+        $this->assertSame($signed->getHash(), $this->recomputeHash($signed->getInvoice()));
+    }
 }
