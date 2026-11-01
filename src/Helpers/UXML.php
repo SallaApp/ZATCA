@@ -329,6 +329,20 @@ class UXML
     }
 
     /**
+     * @throws InvalidArgumentException if the node is missing or has no text
+     */
+    private function requiredText(string $xpath): string
+    {
+        $text = $this->get($xpath)?->asText();
+
+        if ($text === null || trim($text) === '') {
+            throw new InvalidArgumentException("Missing required invoice node: {$xpath}");
+        }
+
+        return $text;
+    }
+
+    /**
      * Generate Tags array for QR generation base in the current invoice xml
      *
      * @param Certificate $certificate
@@ -338,6 +352,13 @@ class UXML
      */
     public function toTagsArray(Certificate $certificate, ?string $invoiceHash, ?string $digitalSignature): array
     {
+        $issueDate = $this->requiredText("cbc:IssueDate");
+        $issueTime = $this->requiredText("cbc:IssueTime");
+        $sellerName = $this->requiredText("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName");
+        $taxNumber = $this->requiredText("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID");
+        $totalAmount = $this->requiredText("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount");
+        $taxAmount = $this->requiredText("cac:TaxTotal");
+
         if (!$invoiceHash) {
             $invoiceHash = $this->getXmlHash();
         }
@@ -346,16 +367,14 @@ class UXML
             $digitalSignature = base64_encode($certificate->getPrivateKey()->sign(base64_decode($invoiceHash)));
         }
 
-        $issueDate = $this->get("cbc:IssueDate")->asText();
-        $issueTime = $this->get("cbc:IssueTime")->asText();
         $issueTime = stripos($issueTime, 'Z') === false ? $issueTime . 'Z' : $issueTime;
 
         $qrArray = [
-            new Seller($this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName")->asText()), // Seller׳s name
-            new TaxNumber($this->get("cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID")->asText()), // VAT registration number of the seller
+            new Seller($sellerName), // Seller׳s name
+            new TaxNumber($taxNumber), // VAT registration number of the seller
             new InvoiceDate($issueDate . 'T' . $issueTime), // invoice date as Zulu ISO8601 - Time stamp of the invoice (date and time)
-            new InvoiceTotalAmount($this->get("cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount")->asText()), //Invoice total (with VAT)
-            new InvoiceTaxAmount($this->get("cac:TaxTotal")->asText()), // VAT total
+            new InvoiceTotalAmount($totalAmount), //Invoice total (with VAT)
+            new InvoiceTaxAmount($taxAmount), // VAT total
             new InvoiceHash($invoiceHash), // Hash of XML invoice
             new InvoiceDigitalSignature($digitalSignature), // ECDSA signature
             new PublicKey(base64_decode($certificate->getPlainPublicKey())) //ECDSA public key
