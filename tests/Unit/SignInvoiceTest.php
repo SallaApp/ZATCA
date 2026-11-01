@@ -55,4 +55,49 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         // $this->assertStringContainsString($certificate->getCertificateSignature(),base64_decode($signInfo->getQRCode()));
     }
 
+    public static function requiredNodes(): array
+    {
+        return [
+            'IssueDate' => ['cbc:IssueDate'],
+            'IssueTime' => ['cbc:IssueTime'],
+            'RegistrationName' => ['cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:RegistrationName'],
+            'CompanyID' => ['cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID'],
+            'TaxInclusiveAmount' => ['cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount'],
+            'TaxTotal' => ['cac:TaxTotal'],
+        ];
+    }
+
+    #[Test]
+    #[\PHPUnit\Framework\Attributes\DataProvider('requiredNodes')]
+    public function rejectsInvoiceMissingRequiredNode(string $xpath)
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $invoice = \Salla\ZATCA\Helpers\UXML::fromString($xml);
+        while ($invoice->get($xpath)) {
+            $invoice->removeByXpath($xpath);
+        }
+        $broken = $invoice->asXML();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage($xpath);
+        (new InvoiceSign($broken, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign();
+    }
+
+    #[Test]
+    public function signsValidInvoiceAfterRejectedOne()
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $invoice = \Salla\ZATCA\Helpers\UXML::fromString($xml);
+        $invoice->removeByXpath('cbc:IssueDate');
+
+        try {
+            (new InvoiceSign($invoice->asXML(), new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign();
+            $this->fail('Expected InvalidArgumentException');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('cbc:IssueDate', $e->getMessage());
+        }
+
+        $signed = (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign();
+        $this->assertStringContainsString($signed->getQRCode(), $signed->getInvoice());
+    }
 }
