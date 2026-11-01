@@ -3,9 +3,11 @@
 
 namespace Salla\ZATCA\Test\Unit;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use phpseclib3\File\X509;
 use Salla\ZATCA\Helpers\Certificate;
+use Salla\ZATCA\Helpers\UXML;
 use Salla\ZATCA\Models\InvoiceSign;
 
 class SignInvoiceTest extends \PHPUnit\Framework\TestCase
@@ -55,4 +57,51 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         // $this->assertStringContainsString($certificate->getCertificateSignature(),base64_decode($signInfo->getQRCode()));
     }
 
+    public static function hashFixtures(): array
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $signed = (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign()->getInvoice();
+
+        return ['unsigned' => [$xml], 'signed' => [$signed]];
+    }
+
+    #[Test]
+    #[DataProvider('hashFixtures')]
+    public function getXmlHashDoesNotMutateTheOriginal(string $xml)
+    {
+        $uxml = UXML::fromString($xml);
+        $before = $uxml->element()->ownerDocument->saveXML();
+        $count = fn () => $uxml->element()->getElementsByTagNameNS('*', '*')->length;
+        $nodes = $count();
+
+        $hash = $uxml->getXmlHash();
+
+        $this->assertSame($before, $uxml->element()->ownerDocument->saveXML());
+        $this->assertSame($nodes, $count());
+        $this->assertSame($hash, $uxml->getXmlHash());
+        $this->assertSame($hash, $uxml->getXmlHash());
+        $this->assertSame($before, $uxml->element()->ownerDocument->saveXML());
+        $this->assertSame($nodes, $count());
+    }
+
+    #[Test]
+    public function signedInvoiceKeepsSignatureNodesAfterHashing()
+    {
+        $uxml = UXML::fromString(self::hashFixtures()['signed'][0]);
+        $uxml->getXmlHash();
+
+        $this->assertNotNull($uxml->get('ext:UBLExtensions'));
+        $this->assertNotNull($uxml->get('cac:Signature'));
+        $this->assertNotNull($uxml->get('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]'));
+    }
+
+    #[Test]
+    public function canSignAfterHashing()
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        $expected = (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign()->getHash();
+
+        $uxml = UXML::fromString($xml);
+        $this->assertSame($expected, $uxml->getXmlHash());
+    }
 }
