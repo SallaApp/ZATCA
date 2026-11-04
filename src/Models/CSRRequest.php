@@ -80,7 +80,7 @@ class CSRRequest
 
     /**
      * the current Active environment in zatca
-     * will support three modes (sandbox, simulation, production)
+     * will support three modes (sandbox, simulation, production); `core` is accepted as production
      * @var string
      */
     protected $currentEnv = 'sandbox';
@@ -168,6 +168,15 @@ class CSRRequest
 
     public function setCurrentZatcaEnv(string $currentEnv): CSRRequest
     {
+        // ZATCA calls its production gateway "core" (`/e-invoicing/core/...`).
+        if ($currentEnv === 'core') {
+            $currentEnv = self::PRODUCTION;
+        }
+
+        if (! in_array($currentEnv, [self::SANDBOX, self::SIMULATION, self::PRODUCTION], true)) {
+            throw new CSRValidationException('The ZATCA environment must be one of: sandbox, simulation, production (or core)', 422);
+        }
+
         $this->currentEnv = $currentEnv;
 
         return $this;
