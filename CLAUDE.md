@@ -11,7 +11,7 @@ signing of UBL 2.1 invoices with the QR code embedded. It does **not** build the
 - `robrichards/xmlseclibs ^3.1` — XML digital-signature helpers
 - `josemmo/uxml ^0.1.4` — UBL XML DOM/XPath manipulation
 - `chillerlan/php-qrcode ^5.0` — QR image rendering (v5 since release 4.0.0)
-- `phpunit/phpunit ~8.0` (dev) · no Laravel, no framework coupling
+- `phpunit/phpunit ^10.5|^11.5|^12.0` (dev): tests use `#[Test]`/`#[DataProvider]` attributes, not `@test`/`@dataProvider` doc-comments (PHPUnit ignores doc-comment metadata on methods with attributes, and PHPUnit 12 no longer reads it) · no Laravel, no framework coupling
 
 ## Run / test / build
 ```bash
