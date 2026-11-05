@@ -102,12 +102,26 @@ class CSRRequest
 
     public function setOrganizationalUnitName(string $organizationalUnitName): self
     {
-        if (strpos($this->getUID(), '1', 10) == 1 && strlen($organizationalUnitName) != 10) {
-            throw new CSRValidationException('The Organization Unit Name Must Match this (If 11th digit of Organization Identifier(UID) = 1 then needs to be 10 digit number)', 422);
-        }
+        $this->assertVatGroupMemberTin($this->UID, $organizationalUnitName);
 
         $this->organizationalUnitName = $organizationalUnitName;
         return $this;
+    }
+
+    /**
+     * A VAT group's number has `1` as its 11th digit; its organizational unit name
+     * must then be the 10-digit TIN of the group member. Checked once both are set,
+     * whichever setter runs last.
+     */
+    private function assertVatGroupMemberTin(?string $UID, ?string $organizationalUnitName): void
+    {
+        if ($UID === null || $organizationalUnitName === null || $UID[10] !== '1') {
+            return;
+        }
+
+        if (! preg_match('/^\d{10}$/', $organizationalUnitName)) {
+            throw new CSRValidationException('The Organization Unit Name Must Match this (If 11th digit of Organization Identifier(UID) = 1 then needs to be 10 digit number)', 422);
+        }
     }
 
 
@@ -124,9 +138,11 @@ class CSRRequest
 
     public function setUID(string $UID): self
     {
-        if (strlen($UID) !== 15 || substr($UID, 0, 1) != '3' || substr($UID, -1, 1) != '3') {
+        if (! preg_match('/^3\d{13}3$/', $UID)) {
             throw new CSRValidationException('The Organization Identifier must be 15 digits, starting andending with 3 ', 422);
         }
+
+        $this->assertVatGroupMemberTin($UID, $this->organizationalUnitName);
 
         $this->UID = $UID;
         return $this;
