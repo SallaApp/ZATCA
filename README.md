@@ -54,7 +54,7 @@ $data = CSRRequest::make()
     ->setOrganizationalUnitName('string $organizationalUnitName')
     ->setRegisteredAddress('string $registeredAddress')
     ->setInvoiceType(true, true) //invoice types , the default is true, true
-    ->setCurrentZatcaEnv('string $currentEnv') //support all modes ['sandbox','simulation','core']
+    ->setCurrentZatcaEnv('string $currentEnv') //one of ['sandbox','simulation','production'] ('core' is the same as 'production'); any other value throws CSRValidationException
     ->setBusinessCategory('string $businessCategory');
 
 $CSR = GenerateCSR::fromRequest($data)->initialize()->generate();
