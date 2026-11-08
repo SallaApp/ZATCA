@@ -19,6 +19,9 @@ composer install
 composer test                                  # = phpunit, config in phpunit.xml
 ./vendor/bin/phpunit --filter SignInvoiceTest
 ```
+The library runs on PHP >= 8.0, but the tests need PHP >= 8.1: PHPUnit 10.5 needs 8.1, 11.5 needs 8.2 and
+12 needs 8.3. On PHP 8.0, `composer install` can't resolve the dev dependencies. Use a newer PHP; don't
+lower `phpunit/phpunit`, because the attribute-based tests need PHPUnit 10.5 or later.
 This repo has no unit-test workflow (`.github/workflows/` only has `lint-pr.yaml`). The suite also runs in
 `services/zatca-einvoicing` CI, whose `phpunit.xml` includes `vendor/salla/zatca/tests` as the `zatca`
 testsuite, so run that service's tests against your branch before tagging a release.

@@ -22,6 +22,8 @@
 * A mbstring extension
 * An ext-dom extension
 
+Running the tests needs PHP >= 8.1 (PHPUnit 10.5; PHPUnit 11.5 needs PHP 8.2 and PHPUnit 12 needs PHP 8.3).
+
 ## Installation
 
 You can install the package via composer:
