@@ -74,4 +74,65 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals(str_replace("\r\n", "", $publicKeyX509), str_replace("\n", "", $publicKey));
     }
+
+    public static function injectionProvider(): array
+    {
+        $payload = "x\n[ v3_req ]\nsubjectAltName=DNS:attacker.invalid";
+        return [
+            'businessCategory' => ['setBusinessCategory', [$payload]],
+            'businessCategory crlf' => ['setBusinessCategory', ["x\r\ny"]],
+            'registeredAddress' => ['setRegisteredAddress', [$payload]],
+            'serialNumber' => ['setSerialNumber', ['200000', $payload, 'Merchant']],
+            'brackets' => ['setBusinessCategory', ['[ v3_req ]']],
+            'variable expansion' => ['setBusinessCategory', ['${ENV::HOME}']],
+            'comment' => ['setBusinessCategory', ['Supply #activities']],
+            'escape sequence' => ['setRegisteredAddress', ['Riyadh\\nx']],
+            'apostrophe' => ['setRegisteredAddress', ["Sa'ad Trading"]],
+            'double quote' => ['setBusinessCategory', ['a "q" b']],
+            'backtick' => ['setBusinessCategory', ['a `q` b']],
+        ];
+    }
+
+    #[Test]
+    public function shouldKeepEqualsSignInSubjectValue()
+    {
+        $csr = GenerateCSR::fromRequest(
+            CSRRequest::make()
+                ->setUID('311111111101113')
+                ->setSerialNumber('200000', 'Salla Store', 'Merchant Name')
+                ->setCommonName('Salla')
+                ->setCountryName('SA')
+                ->setOrganizationName('Salla Store')
+                ->setOrganizationalUnitName('3311111111')
+                ->setRegisteredAddress('3355 - Riyadh')
+                ->setInvoiceType(true, true)
+                ->setCurrentZatcaEnv(CSRRequest::SANDBOX)
+                ->setBusinessCategory('a=b')
+        )->initialize()->generate();
+
+        $der = base64_decode(preg_replace('/-----[^-]+-----|\s+/', '', $csr->getCsrContent()));
+
+        $this->assertStringContainsString('a=b', $der);
+    }
+
+    #[Test]
+    #[\PHPUnit\Framework\Attributes\DataProvider('injectionProvider')]
+    public function shouldRejectConfigInjectionInSubjectFields(string $setter, array $args)
+    {
+        $request = CSRRequest::make()
+            ->setUID('311111111101113')
+            ->setSerialNumber('200000', 'Salla Store', 'Merchant Name')
+            ->setCommonName('Salla')
+            ->setCountryName('SA')
+            ->setOrganizationName('Salla Store')
+            ->setOrganizationalUnitName('3311111111')
+            ->setRegisteredAddress('3355 - Riyadh')
+            ->setInvoiceType(true, true)
+            ->setCurrentZatcaEnv(CSRRequest::SANDBOX)
+            ->setBusinessCategory('company');
+        $request->$setter(...$args);
+
+        $this->expectException(\Salla\ZATCA\Exception\CSRValidationException::class);
+        GenerateCSR::fromRequest($request)->initialize();
+    }
 }

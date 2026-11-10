@@ -2,6 +2,7 @@
 
 namespace Salla\ZATCA;
 
+use Salla\ZATCA\Exception\CSRValidationException;
 use Salla\ZATCA\Models\CSR;
 use Salla\ZATCA\Models\CSRRequest;
 
@@ -55,6 +56,13 @@ EOL;
 
     public function initialize(): self
     {
+        // subject values are written into an OpenSSL config file: reject anything that could become config syntax.
+        foreach ($this->data['subject'] as $name => $value) {
+            if (! is_scalar($value) || preg_match('/[\x00-\x1F\x7F\[\]$#\\\\"\'`]/', (string) $value)) {
+                throw new CSRValidationException("The CSR subject field '{$name}' contains invalid characters", 422);
+            }
+        }
+
         $this->opensslConfig['config'] = tempnam(sys_get_temp_dir(), "zakact_openssl_config_");
 
         // prepare openssl config file.
