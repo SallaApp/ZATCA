@@ -87,7 +87,32 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
             'variable expansion' => ['setBusinessCategory', ['${ENV::HOME}']],
             'comment' => ['setBusinessCategory', ['Supply #activities']],
             'escape sequence' => ['setRegisteredAddress', ['Riyadh\\nx']],
+            'apostrophe' => ['setRegisteredAddress', ["Sa'ad Trading"]],
+            'double quote' => ['setBusinessCategory', ['a "q" b']],
+            'backtick' => ['setBusinessCategory', ['a `q` b']],
         ];
+    }
+
+    #[Test]
+    public function shouldKeepEqualsSignInSubjectValue()
+    {
+        $csr = GenerateCSR::fromRequest(
+            CSRRequest::make()
+                ->setUID('311111111101113')
+                ->setSerialNumber('200000', 'Salla Store', 'Merchant Name')
+                ->setCommonName('Salla')
+                ->setCountryName('SA')
+                ->setOrganizationName('Salla Store')
+                ->setOrganizationalUnitName('3311111111')
+                ->setRegisteredAddress('3355 - Riyadh')
+                ->setInvoiceType(true, true)
+                ->setCurrentZatcaEnv(CSRRequest::SANDBOX)
+                ->setBusinessCategory('a=b')
+        )->initialize()->generate();
+
+        $der = base64_decode(preg_replace('/-----[^-]+-----|\s+/', '', $csr->getCsrContent()));
+
+        $this->assertStringContainsString('a=b', $der);
     }
 
     #[Test]
