@@ -3,6 +3,7 @@
 
 namespace Salla\ZATCA\Test\Unit;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use phpseclib3\File\X509;
 use Salla\ZATCA\Helpers\Certificate;
@@ -83,12 +84,21 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($signed->getHash(), $this->recomputeHash($signed->getInvoice()));
     }
 
-    #[Test]
-    public function blankLineInTextNodeIsPreservedAndHashMatches()
+    public static function notesWithBlankLines(): array
     {
-        $signed = $this->signWith("line1\n\nline2\n  \nline3");
+        return [
+            'text with blank lines' => ["line1\n\nline2\n  \nline3"],
+            'whitespace only'       => ["\n\n  \n"],
+        ];
+    }
 
-        $this->assertStringContainsString("line1\n\nline2\n  \nline3", $signed->getInvoice());
+    #[Test]
+    #[DataProvider('notesWithBlankLines')]
+    public function blankLineInTextNodeIsPreservedAndHashMatches(string $note)
+    {
+        $signed = $this->signWith($note);
+
+        $this->assertStringContainsString("<cbc:Note>{$note}</cbc:Note>", $signed->getInvoice());
         $this->assertSame($signed->getHash(), $this->recomputeHash($signed->getInvoice()));
     }
 }

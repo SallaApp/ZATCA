@@ -78,10 +78,14 @@ class InvoiceSign
                 $this->getQRNode($QRCode) . PHP_EOL . "    <cac:AccountingSupplierParty>"
             ], $this->xmlDom->asXML());
 
-        // remove blank lines only from whitespace between elements; text with content is covered by the hash.
+        // remove blank lines only from whitespace between elements; element text (even whitespace-only) is covered by the hash.
         return new \Salla\ZATCA\Models\Invoice(
-            preg_replace_callback('/>([^<]*)</', function ($m) {
-                return trim($m[1]) === '' ? '>' . substr(preg_replace('/^[ \t]*[\r\n]+/m', '', 'x' . $m[1]), 1) . '<' : $m[0];
+            preg_replace_callback('/<([^\s>\/!?]+)[^>]*>\s*<\/\1>|>([^<]*)(?=<)/', function ($m) {
+                if (!isset($m[2]) || trim($m[2]) !== '') {
+                    return $m[0];
+                }
+
+                return '>' . substr(preg_replace('/^[ \t]*[\r\n]+/m', '', 'x' . $m[2]), 1);
             }, $signedInvoice),
             $this->invoiceHash,
             $QRCode,
