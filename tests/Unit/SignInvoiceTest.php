@@ -96,7 +96,7 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
     }
 
     #[Test]
-    public function canSignAfterHashing()
+    public function xmlHashMatchesSignHash()
     {
         $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
         $expected = (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign()->getHash();
