@@ -85,6 +85,8 @@ class GenerateCSRTest extends \PHPUnit\Framework\TestCase
             'serialNumber' => ['setSerialNumber', ['200000', $payload, 'Merchant']],
             'brackets' => ['setBusinessCategory', ['[ v3_req ]']],
             'variable expansion' => ['setBusinessCategory', ['${ENV::HOME}']],
+            'comment' => ['setBusinessCategory', ['Supply #activities']],
+            'escape sequence' => ['setRegisteredAddress', ['Riyadh\\nx']],
         ];
     }
 
