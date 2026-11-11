@@ -104,4 +104,50 @@ class SignInvoiceTest extends \PHPUnit\Framework\TestCase
         $uxml = UXML::fromString($xml);
         $this->assertSame($expected, $uxml->getXmlHash());
     }
+
+    private function signWith(?string $note): \Salla\ZATCA\Models\Invoice
+    {
+        $xml = file_get_contents(__DIR__ . '/files/simplified_invoice.xml');
+        if ($note !== null) {
+            $xml = preg_replace('/<cbc:ID>118<\/cbc:ID>/', '<cbc:ID>118</cbc:ID>' . "\n    " . '<cbc:Note>' . $note . '</cbc:Note>', $xml, 1);
+        }
+
+        return (new InvoiceSign($xml, new Certificate(self::CERTIFICATE, self::PRIVATE_KEY)))->sign();
+    }
+
+    private function recomputeHash(string $signedXml): string
+    {
+        $dom = \Salla\ZATCA\Helpers\UXML::fromString($signedXml);
+        $dom->removeByXpath('ext:UBLExtensions');
+        $dom->removeByXpath('cac:Signature');
+        $dom->removeParentByXpath('cac:AdditionalDocumentReference/cbc:ID[. = "QR"]');
+
+        return base64_encode(hash('sha256', $dom->element()->C14N(false, false), true));
+    }
+
+    #[Test]
+    public function baselineHashMatchesReturnedXml()
+    {
+        $signed = $this->signWith(null);
+
+        $this->assertSame($signed->getHash(), $this->recomputeHash($signed->getInvoice()));
+    }
+
+    public static function notesWithBlankLines(): array
+    {
+        return [
+            'text with blank lines' => ["line1\n\nline2\n  \nline3"],
+            'whitespace only'       => ["\n\n  \n"],
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('notesWithBlankLines')]
+    public function blankLineInTextNodeIsPreservedAndHashMatches(string $note)
+    {
+        $signed = $this->signWith($note);
+
+        $this->assertStringContainsString("<cbc:Note>{$note}</cbc:Note>", $signed->getInvoice());
+        $this->assertSame($signed->getHash(), $this->recomputeHash($signed->getInvoice()));
+    }
 }
