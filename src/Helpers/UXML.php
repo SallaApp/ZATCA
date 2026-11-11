@@ -382,7 +382,11 @@ class UXML
      */
     public function getXmlHash(): string
     {
-        $clonedXML = clone $this;
+        // clone $this is shallow (shares the DOM), so hash an independent deep copy
+        $doc = new DOMDocument();
+        $doc->preserveWhiteSpace = true;
+        $doc->appendChild($doc->importNode($this->element, true));
+        $clonedXML = new self($doc->documentElement);
 
         /**
          * remove unwanted tags
