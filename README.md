@@ -68,7 +68,7 @@ file_put_contents('output file path name', $CSR->getCsrContent());
 
 At this stage you need to share the CSR to the ZATCA via APIs to get the certification for the current merchant
 
-### Signing Invoices & Generate QA code
+### Signing Invoices & Generate QR code
 
 ```php
 use Salla\ZATCA\Helpers\Certificate;
